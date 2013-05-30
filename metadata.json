@@ -1,0 +1,41 @@
+{
+  "name": "vitadisplays-oxid",
+  "author": "Matthias Krause",
+  "description": "",
+  "license": "",
+  "project_page": "",
+  "source": "",
+  "summary": "",
+  "version": "0.1",
+  "checksums": {
+    "Modulefile": "617ab7d31abf9883bdf6ae925bc0f557",
+    "README.markdown": "3aaee7a081a2e581517409d29b701d32",
+    "Rakefile": "f37e6131fe7de9a49b09d31596f5fbf1",
+    "files\\mysql\\my.cnf": "d41d8cd98f00b204e9800998ecf8427e",
+    "files\\zend\\php-5.3.x\\ZendGuardLoader.so": "abde7aab4ddfc99755b548e865071253",
+    "files\\zend\\zend_guard.ini": "8b8edad63535a74e2c3cc02065cbc9a4",
+    "functions\\oxid\\oxid-config-inc.php": "990e73d18c38ceb18e3468911ee3c5ea",
+    "functions\\oxid\\oxid-config.php": "9ed82d7b54e29a7db7205a39d5b51f93",
+    "functions\\oxid\\oxid-modules.php": "90e1caab52cb22e6039e3f3e332d9a9d",
+    "functions\\oxid\\phar-extract.php": "41ab0e40a23499ea6c2d84d2903aac9e",
+    "manifests\\apache.pp": "f4d9c9afca268513149c62dfa6469d03",
+    "manifests\\common.pp": "a44f37d320205eda037d2d35d2019c9f",
+    "manifests\\init.pp": "8197f1a9fa82cadcbdd5192af2e0c13c",
+    "manifests\\mysql.pp": "14a72b9e53e78a847bda10ec3a0c2a3e",
+    "manifests\\params.pp": "816c6c11a1392a4fdf98d0fbe6519287",
+    "manifests\\php.pp": "77f43367123b8e3ac1a4eed82a873e20",
+    "manifests\\stages.pp": "1101ea0329e080a9a9146628e819dae8",
+    "spec\\spec.opts": "a600ded995d948e393fbe2320ba8e51c",
+    "spec\\spec_helper.rb": "3ea886dd135e120afa31e0aab12e85b0",
+    "templates\\php\\apc.erp": "d41d8cd98f00b204e9800998ecf8427e",
+    "templates\\php\\memcache.erp": "d41d8cd98f00b204e9800998ecf8427e",
+    "templates\\php\\memcached.erp": "d41d8cd98f00b204e9800998ecf8427e",
+    "tests\\init.pp": "68b329da9893e34099c7d8ad5cb9c940"
+  },
+  "dependencies": [
+    {
+      "name": "puppetlabs/stdlib",
+      "version_requirement": "\u003d\u003d4.1.0"
+    }
+  ]
+}

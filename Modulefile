@@ -1,0 +1,10 @@
+name 'vitadisplays-oxid'
+version '0.1'
+
+author 'Matthias Krause'
+license ''
+project_page ''
+source ''
+summary ''
+description ''
+dependency 'puppetlabs/stdlib', '==4.1.0'
