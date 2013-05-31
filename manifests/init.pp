@@ -57,12 +57,12 @@ class oxid(
     require => Class [oxid::php]
   } ->  
 
-  oxid::config{ $config_keys : 
+  oxid::baseconfig{ $config_keys : 
       config_file     => "${configurations['sShopDir']}/config.inc.php",
       configurations => $configurations
   }  
   
-  $requires = [Oxid::Config[$config_keys], Oxid::Install["${name}-base-install"]]
+  $requires = [Oxid::BaseConfig[$config_keys], Oxid::Install["${name}-base-install"]]
   
   if $dataSources != undef {
     importData {$dataSources: shop_dir => $configurations['sShopDir'], require => $requires } 
@@ -177,7 +177,7 @@ class oxid(
     }
   }
 
-  define config ($config_file, $configurations) {
+  define baseconfig ($config_file, $configurations) {
     $raw_value = $configurations[$name]
     
     $config_value1 = type($raw_value) ? {
@@ -300,7 +300,7 @@ class oxid(
     $module_path = get_module_path('oxid')
     
     if $ensure == 'absent' {
-      if (is_array($modules) or is_string($modules)) and $modules != "*" {
+      if (is_array($modules) or (is_string($modules)) and $modules != "*") {
          $jsonHash = { 
             'command' => "delete", 
             'module' => $modules,
@@ -356,7 +356,7 @@ class oxid(
       } 
   }
   
-  define removeShopConfigSingleAction($shopid, $host, $port, $db, $user, $password) {
+  /*define removeShopConfigSingleAction($shopid, $host, $port, $db, $user, $password) {
     $varname = $name
     $module_path = get_module_path('oxid')
     
@@ -376,9 +376,9 @@ class oxid(
         command => "oxid-config.php '${cmd}'", 
         path   => "${module_path}/functions/oxid"
       }
-  }
+  }*/
     
-  define setShopConfigSingleAction($shopid, $configs, $host, $port, $db, $user, $password, $config_key) {
+  define configSingleAction($shopid, $configs, $host, $port, $db, $user, $password, $config_key) {
     $varname = $name     
     $module_path = get_module_path('oxid')
     
@@ -420,26 +420,37 @@ class oxid(
       }
   }
   
-  define setShopConfig($shopid, $configs, $host = "localhost", $port = $oxid::params::db_port, $db = $oxid::params::db_name, $user = $oxid::params::db_user, $password = $oxid::params::db_password, $config_key = $oxid::params::config_key) {
+  define config($shopid, $ensure = "present", $configs, $host = "localhost", $port = $oxid::params::db_port, $db = $oxid::params::db_name, $user = $oxid::params::db_user, $password = $oxid::params::db_password, $config_key = $oxid::params::config_key) {
     $configKeys = keys($configs)
     
-    setShopConfigSingleAction { $configKeys:
-        shopid => $shopid, 
-        configs => $configs, 
-        host => $host, 
-        port => $port,
-        db => $db,
-        user => $user, 
-        password => $password, 
-        config_key => $config_key
+    if $ensure == 'absent' {
+	     oxid::removeconfig { $configKeys: 
+	        shopid => $shopid, 
+          host => $host, 
+          port => $port,
+          db => $db,
+          user => $user, 
+          password => $password
+	     }
+    } else {
+      oxid::configSingleAction { $configKeys:
+          shopid => $shopid, 
+          configs => $configs, 
+          host => $host, 
+          port => $port,
+          db => $db,
+          user => $user, 
+          password => $password, 
+          config_key => $config_key
+      }
     }
   }
   
-  define removeShopConfig($shopid, $varnames, $host = "localhost", $port = $oxid::params::db_port, $db = $oxid::params::db_name, $user = $oxid::params::db_user, $password = $oxid::params::db_password) {
+  define removeconfig($shopid, $host = "localhost", $port = $oxid::params::db_port, $db = $oxid::params::db_name, $user = $oxid::params::db_user, $password = $oxid::params::db_password) {
     $module_path = get_module_path('oxid')
     $jsonHash = { 
         'command' => 'remove', 
-        'varname' => $varnames, 
+        'varname' => $name, 
         'shopid' => $shopid,
         'host' => "${host}:${port}",
         'db' => $db,
@@ -452,6 +463,30 @@ class oxid(
     exec { "oxid-config ${cmd}":        
         command => "oxid-config.php '${cmd}'", 
         path   => "${module_path}/functions/oxid"
+     }
+  }
+  
+  define shopconfigSinleAction($shopid, $configs, $host = "localhost", $port = $oxid::params::db_port, $db = $oxid::params::db_name, $user = $oxid::params::db_user, $password = $oxid::params::db_password) {
+    $value = $configs[$name]
+    $query = "UPDATE oxshops SET ${name}='${value}' WHERE oxid = '${shopid}'"
+    
+    exec { $query:
+      command => "mysql -h ${host} -P ${port} -u${user} -p${password} ${db} -e \"${query}\"",
+      path   => "/usr/bin:/usr/sbin:/bin"
+    }
+  }
+  
+  define shopconfig($shopid, $configs, $host = "localhost", $port = $oxid::params::db_port, $db = $oxid::params::db_name, $user = $oxid::params::db_user, $password = $oxid::params::db_password) {
+    $configKeys = keys($configs)
+    
+     oxid::shopconfigSinleAction{$configKeys: 
+       shopid => $shopid,
+       configs => $configs,
+       host => $host,
+       port => $port,
+       db => $db,
+       user => $user,
+       password => $password
      }
   }
   
