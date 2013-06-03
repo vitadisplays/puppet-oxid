@@ -1,9 +1,15 @@
 class oxid::common() {
   include oxid::common::params
   
-  exec { "apt-get update": 
-    path => "/usr/bin:/usr/sbin:/bin"
-  } ->
+  class { 'apt':
+    always_apt_update    => true,
+  }
+
+  apt::ppa { "ppa:skettler/php": }
   
-  package { $oxid::common::params::packages:  ensure => installed, } 
+  /*exec { "apt-get update": 
+    path => "/usr/bin:/usr/sbin:/bin"
+  } ->*/
+  
+  package { $oxid::common::params::packages:  ensure => installed, require => Class['apt'] } 
 }

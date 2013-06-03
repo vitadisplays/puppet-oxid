@@ -8,7 +8,7 @@
   "summary": "",
   "version": "0.1",
   "checksums": {
-    "Modulefile": "617ab7d31abf9883bdf6ae925bc0f557",
+    "Modulefile": "427ca5827140fbb0be00065f8793b2a3",
     "README.markdown": "3aaee7a081a2e581517409d29b701d32",
     "Rakefile": "f37e6131fe7de9a49b09d31596f5fbf1",
     "files\\mysql\\my.cnf": "d41d8cd98f00b204e9800998ecf8427e",
@@ -18,12 +18,12 @@
     "functions\\oxid\\oxid-config.php": "9ed82d7b54e29a7db7205a39d5b51f93",
     "functions\\oxid\\oxid-modules.php": "90e1caab52cb22e6039e3f3e332d9a9d",
     "functions\\oxid\\phar-extract.php": "41ab0e40a23499ea6c2d84d2903aac9e",
-    "manifests\\apache.pp": "f4d9c9afca268513149c62dfa6469d03",
-    "manifests\\common.pp": "a44f37d320205eda037d2d35d2019c9f",
-    "manifests\\init.pp": "50897dd2e4f2ecf925928b1b5eae8148",
-    "manifests\\mysql.pp": "14a72b9e53e78a847bda10ec3a0c2a3e",
-    "manifests\\params.pp": "816c6c11a1392a4fdf98d0fbe6519287",
-    "manifests\\php.pp": "77f43367123b8e3ac1a4eed82a873e20",
+    "manifests\\apache.pp": "7d4cbf72d5470c4cb5b9ff72c61d83dc",
+    "manifests\\common.pp": "6449ce621183129afe558c7ff90227d7",
+    "manifests\\init.pp": "014ed11eede0f759913f0b80fe120ffb",
+    "manifests\\mysql.pp": "2efe07901779e690998debf656752759",
+    "manifests\\params.pp": "7a701cd8879a2fdc951b8bd31d5c0b7b",
+    "manifests\\php.pp": "48a7b664995ce703578f5e57a3a8178e",
     "manifests\\stages.pp": "1101ea0329e080a9a9146628e819dae8",
     "spec\\spec.opts": "a600ded995d948e393fbe2320ba8e51c",
     "spec\\spec_helper.rb": "3ea886dd135e120afa31e0aab12e85b0",
@@ -36,6 +36,10 @@
     {
       "name": "puppetlabs/stdlib",
       "version_requirement": "\u003d\u003d4.1.0"
+    },
+    {
+      "name": "puppetlabs/apt",
+      "version_requirement": "\u003d\u003d1.1.0"
     }
   ]
 }

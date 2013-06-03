@@ -1,23 +1,17 @@
 class oxid::php::params {
   $packages = [
-    'php5',
-    'php5-cli',
-    'php-apc',
-    'php-pear',
-    'php5-common',
-    'php5-dev',
-    'php5-gd',
-    'php5-imagick',
-    'php5-mcrypt',
-    'php5-memcache',
-    'php5-memcached',
-    'php5-mysql',
-    'php5-curl',
+    'php53',
+    'php53-dev',
+    'php53-apc',
+    'php53-pear',
+    'php53-common',
+    'php53-memcache',
     'shtool',
     'ssl-cert',
-    'uuid-dev', "libapache2-mod-php5"]
+    'uuid-dev', "libapache2-mod-php53"]    
     
-    $config = "/etc/php5/apache2/php.ini"
+  $pear_packages = ['MDB2_Driver_mysql', 'Net_Curl']
+  $config = "/etc/php53/apache2/php.ini"
 }
 
 class oxid::mysql::params {
@@ -51,7 +45,6 @@ class oxid::apache::params {
 class oxid::common::params {
   $tmp_dir = "/tmp"
   $packages = [	   
-	  'python-software-properties', 
 	  'gzip', 
 	  'zip',
 	  'mysql-client',

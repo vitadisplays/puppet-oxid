@@ -49,7 +49,7 @@ class oxid::mysql::server($user = "root", $password, $config_template = undef) {
     }
   }
   
-  define execFile ($db, $host = "localhost", $user, $password, $sql_file = undef) {
+  define execFile ($db, $host = "localhost", $port = 3306,  $user, $password, $sql_file = undef) {
     if $sql_file != undef {
       $myfile = $sql_file
     } else {
@@ -57,7 +57,7 @@ class oxid::mysql::server($user = "root", $password, $config_template = undef) {
     }
     
     exec { "mysql-execFile-${host}-${myfile}":
-      command => "mysql -h ${host} -u${user} -p${password} ${db} < ${$myfile}",
+      command => "mysql -P ${port} -h ${host} -u${user} -p${password} ${db} < ${$myfile}",
       path => "/usr/bin:/usr/sbin:/bin"
     }
   }

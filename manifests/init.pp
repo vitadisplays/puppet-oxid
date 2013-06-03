@@ -83,7 +83,7 @@ class oxid(
   define updateViews($shop_dir) {
     exec {"oxid-updateviews-${shop_dir}":
       path    => "/usr/bin:/usr/sbin:/bin",
-      command => "php -c /etc/php5/apache2/php.ini -r 'function getShopBasePath() { return \"${shop_dir}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'",
+      command => "php -c ${oxid::php::params::config} -r 'function getShopBasePath() { return \"${shop_dir}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'",
       notify => Exec["force-reload-apache2"]
     } 
   }

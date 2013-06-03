@@ -8,7 +8,7 @@ class oxid::apache($vhosts = undef) {
   
   class {apache2: }
   
-  apache2::module { "php5": package_require => "libapache2-mod-php5" }
+  apache2::module { "php53": package_require => "libapache2-mod-php53" }
   apache2::module { "ssl":  }
   apache2::module { "deflate" :  }
   apache2::module { "headers" :  }
