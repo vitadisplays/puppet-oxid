@@ -62,7 +62,7 @@ class oxid(
       configurations => $configurations
   }  
   
-  $requires = [Oxid::BaseConfig[$config_keys], Oxid::Install["${name}-base-install"]]
+  /*$requires = [Oxid::BaseConfig[$config_keys], Oxid::Install["${name}-base-install"]]
   
   if $dataSources != undef {
     importData {$dataSources: shop_dir => $configurations['sShopDir'], require => $requires } 
@@ -74,19 +74,20 @@ class oxid(
   
   if $archives != undef {
     extractPhar {$archives: require => $requires}
+  }*/
+  
+  /*clean { "${name}-clean": require => $requires} ->
+  
+  check { "${name}-post-check": shop_dir => $configurations['sShopDir'], compile_dir => $configurations['sCompileDir'], require => Oxid::Baseconfig[$config_keys]}*/  
+  
+
+  class {
+    oxid::lastcheck: configurations => $configurations, stage => last;    
   }
-  
-  clean { "${name}-clean": require => $requires} ->
-  
-  check { "${name}-post-check": shop_dir => $configurations['sShopDir'], compile_dir => $configurations['sCompileDir']}  
-  
-  define updateViews($shop_dir) {
-    exec {"oxid-updateviews-${shop_dir}":
-      path    => "/usr/bin:/usr/sbin:/bin",
-      command => "php -c ${oxid::php::params::config} -r 'function getShopBasePath() { return \"${shop_dir}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'",
-      notify => Exec["force-reload-apache2"]
-    } 
-  }
+    
+  /*define updateViews($shop_dir) {
+     
+  }*/
   
   define install (
     $mysql_user = "root",
@@ -146,6 +147,13 @@ class oxid(
       require => Exec["${process_name}-source"]
     } ->
   
+	  exec { "${process_name}-remove-setup": 
+	      command => "rm -r -f ${shop_dir}/setup", 
+	      onlyif => "test -d ${shop_dir}/setup",
+	      path => "/usr/bin:/usr/sbin:/bin",
+	      refreshonly => true,
+	    }
+    
     mysql::server::execFile { "${process_name}-import-base-${db_name}":
       host     => $db_host,
       db       => $db_name,
@@ -153,7 +161,7 @@ class oxid(
       password => $db_password,
       sql_file     => "${shop_dir}/setup/sql/database.sql",
       require => [Exec["${process_name}-source"]],
-      notify => Exec["oxid-updateviews-${shop_dir}"]
+      notify => Exec["${process_name}-remove-setup"]
     }
   
     if $utf8 == '1' {
@@ -163,19 +171,19 @@ class oxid(
         password => $db_password,
         sql_file => "${shop_dir}/setup/sql/latin1_to_utf8.sql",
         require  => Mysql::Server::ExecFile ["${process_name}-import-base-db"],
-        notify => Exec["oxid-updateviews-${shop_dir}"]
+        notify => Exec["${process_name}-remove-setup"]
       }
-    }
+    }    
   }
   
-  define clean ($shop_dir = $oxid::params::shop_dir, $comple_dir = $oxid::params::compile_dir) {
+  /*define clean ($shop_dir = $oxid::params::shop_dir, $comple_dir = $oxid::params::compile_dir) {
     $process_name = $name
     exec { "${process_name}-${comple_dir}":
       command => "rm -r -f ${comple_dir}/tmp/*",
       path   => "/usr/bin:/usr/sbin:/bin",
       unless => "test -d ${comple_dir}/tmp"
     }
-  }
+  }*/
 
   define baseconfig ($config_file, $configurations) {
     $raw_value = $configurations[$name]
@@ -204,7 +212,7 @@ class oxid(
     exec { "${name}": command => "perl -pi -e \"s/$pattern_no_slashes/$replacement_no_slashes/\" '$file'", path => "/usr/bin:/usr/sbin:/bin"}
   }  
   
-  define check ($shop_dir, $compile_dir) { 
+  /*define check ($shop_dir, $compile_dir) { 
     exec { "${name}-root-dir": 
       command => "chown -R www-data:www-data ${shop_dir} & chmod -R 0775 ${shop_dir}", 
       onlyif => "test -d ${shop_dir}",
@@ -234,20 +242,53 @@ class oxid(
       onlyif => "test -d ${shop_dir}/setup",
       path => "/usr/bin:/usr/sbin:/bin"
     }
-  }
+  }*/
  
+  define syncData($url, $excludes = undef, $dir = $oxid::params::shop_dir, $private_key = undef) { 
+    if $excludes != undef {
+      $real_join = join($excludes, " --exclude=")
+      $real_exclude = " --exclude=${real_join}"
+    } else {
+      $real_exclude = ""
+    }
+    
+    if $private_key != undef {
+      $real_privatekey_option = " -i ${private_key}"
+    } else {
+      $real_privatekey_option = ""
+    }
+                      
+	  exec { "rsync -avz${real_exclude} -e 'ssh ${real_privatekey_option} -oStrictHostKeyChecking=no' ${url} ${dir}":
+			path   => "/usr/bin:/usr/sbin:/bin",
+			timeout => 0
+		}
+  }
+  
+  define syncSQL($url, $remote_config, $local_config, $private_key = undef) {
+    if $private_key != undef {
+      $real_privatekey_option = " -i ${private_key}"
+    } else {
+      $real_privatekey_option = ""
+    }
+                         
+    exec { "ssh ${real_privatekey_option} -oStrictHostKeyChecking=no -C ${url} mysqldump --add-drop-table --allow-keywords --compress -u ${remote_config['dbUser']} --password=${remote_config['dbPwd']} ${remote_config['dbName']} | mysql -u ${local_config['dbUser']} --password=${local_config['dbPwd']} -D ${local_config['dbName']}":
+      path   => "/usr/bin:/usr/sbin:/bin",
+      timeout => 0
+    }
+  }
+  
   define importData ($shop_dir = $oxid::params::shop_dir) {
     $work_dir = "${oxid::common::params::tmp_dir}/oxid-data"
 
     exec { "${name}-mkdirs":
       command => "mkdir -p ${work_dir}/data",
-      path   => "/usr/bin:/usr/sbin:/bin"
-    } ->
+      path   => "/usr/bin:/usr/sbin:/bin"      
+    }
     
     exec { "${name}-wget-data":
       command => "wget --progress=bar ${name} -O ${work_dir}/data/data.tar.gz",
-      path   => "/usr/bin:/usr/sbin:/bin"
-    } ->  
+      path   => "/usr/bin:/usr/sbin:/bin" 
+    }  
     
     exec { "${name}-untar-data":
       command => "tar xvfz ${work_dir}/data/data.tar.gz -C ${shop_dir}",
@@ -540,4 +581,50 @@ class oxid(
        }  
      }  
   }
+  
+   
+}
+
+class oxid::lastcheck($configurations) {
+	   exec { "oxid-clean":
+	      command => "rm -r -f $configurations['sCompileDir']/tmp/*",
+	      path   => "/usr/bin:/usr/sbin:/bin",
+	      unless => "test -d $configurations['sCompileDir']/tmp",
+	      refreshonly => true
+	  }
+   
+      exec { "oxid-check-root-dir": 
+      command => "chown -R www-data:www-data ${configurations['sShopDir']} & chmod -R 0775 ${configurations['sShopDir']}", 
+      onlyif => "test -d ${configurations['sShopDir']}",
+      path => "/usr/bin:/usr/sbin:/bin"
+    }
+    
+    exec { "oxid-check-oxid-config": 
+      command => "chown -R www-data:www-data ${configurations['sShopDir']}/config.inc.php & chmod -R 0444 ${configurations['sShopDir']}/config.inc.php", 
+      onlyif => "test -f ${configurations['sShopDir']}/config.inc.php",
+      path => "/usr/bin:/usr/sbin:/bin"
+    }
+    
+    exec { "oxid-check-oxid-htaccess": 
+      command => "chown -R www-data:www-data ${configurations['sShopDir']}/.htaccess & chmod -R 0444 ${configurations['sShopDir']}/.htaccess", 
+      onlyif => "test -f ${configurations['sShopDir']}/.htaccess",
+      path => "/usr/bin:/usr/sbin:/bin"
+    }
+    
+    exec { "oxid-check-compile-dir": 
+      command => "chown -R www-data:www-data ${configurations['sCompileDir']} & chmod -R 0775 ${configurations['sCompileDir']}", 
+      onlyif => "test -d ${configurations['sShopDir']}",
+      path => "/usr/bin:/usr/sbin:/bin"
+    }
+    
+    exec { "oxid-check-remove-setup": 
+      command => "rm -r -f ${configurations['sShopDir']}/setup", 
+      onlyif => "test -d ${configurations['sShopDir']}/setup",
+      path => "/usr/bin:/usr/sbin:/bin"
+    } ->
+     
+	  exec {"oxid-updateviews":
+	      path    => "/usr/bin:/usr/sbin:/bin",
+	      command => "php -c ${oxid::php::params::config} -r 'function getShopBasePath() { return \"${configurations['sShopDir']}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'",
+	  }
 }
