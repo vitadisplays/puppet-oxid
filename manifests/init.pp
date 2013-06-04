@@ -14,10 +14,7 @@
 class oxid(
     $source,
     $vhosts = undef,
-    $configurations,
-    $archives = undef,
-    $dataSources = undef,
-    $sqlSources = undef
+    $configurations
     ) {    
   
   $config_keys = keys($configurations)
@@ -82,12 +79,11 @@ class oxid(
   
 
   class {
-    oxid::lastcheck: configurations => $configurations, stage => last;    
+    oxid::lastcheck: 
+    shop_dir => $configurations['sShopDir'], 
+    compile_dir => $configurations['sCompileDir'],
+    stage => last;    
   }
-    
-  /*define updateViews($shop_dir) {
-     
-  }*/
   
   define install (
     $mysql_user = "root",
@@ -580,51 +576,49 @@ class oxid(
           require => Exec[$cmds]
        }  
      }  
-  }
-  
-   
+  }   
 }
 
-class oxid::lastcheck($configurations) {
-	   exec { "oxid-clean":
-	      command => "rm -r -f $configurations['sCompileDir']/tmp/*",
-	      path   => "/usr/bin:/usr/sbin:/bin",
-	      unless => "test -d $configurations['sCompileDir']/tmp",
-	      refreshonly => true
-	  }
-   
-      exec { "oxid-check-root-dir": 
-      command => "chown -R www-data:www-data ${configurations['sShopDir']} & chmod -R 0775 ${configurations['sShopDir']}", 
-      onlyif => "test -d ${configurations['sShopDir']}",
+class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "www-data") {  
+    exec { "oxid-check-root-dir": 
+      command => "chown -R ${owner}:${group} ${shop_dir} & chmod -R ug+rw ${shop_dir}", 
       path => "/usr/bin:/usr/sbin:/bin"
-    }
+    } ->
     
     exec { "oxid-check-oxid-config": 
-      command => "chown -R www-data:www-data ${configurations['sShopDir']}/config.inc.php & chmod -R 0444 ${configurations['sShopDir']}/config.inc.php", 
-      onlyif => "test -f ${configurations['sShopDir']}/config.inc.php",
+      command => "chown -R ${owner}:${group} ${shop_dir}/config.inc.php & chmod -R 0444 ${shop_dir}/config.inc.php", 
       path => "/usr/bin:/usr/sbin:/bin"
-    }
+    } ->
     
     exec { "oxid-check-oxid-htaccess": 
-      command => "chown -R www-data:www-data ${configurations['sShopDir']}/.htaccess & chmod -R 0444 ${configurations['sShopDir']}/.htaccess", 
-      onlyif => "test -f ${configurations['sShopDir']}/.htaccess",
+      command => "chown -R ${owner}:${group} ${shop_dir}/.htaccess & chmod -R 0444 ${shop_dir}/.htaccess", 
       path => "/usr/bin:/usr/sbin:/bin"
-    }
+    } ->
     
     exec { "oxid-check-compile-dir": 
-      command => "chown -R www-data:www-data ${configurations['sCompileDir']} & chmod -R 0775 ${configurations['sCompileDir']}", 
-      onlyif => "test -d ${configurations['sShopDir']}",
+      command => "chown -R ${owner}:${group} ${compile_dir} & chmod -R ug+rw ${compile_dir}", 
       path => "/usr/bin:/usr/sbin:/bin"
-    }
+    } ->
+    
+    exec { "oxid-clean":
+        command => "rm -r -f ${compile_dir}/*",
+        path   => "/usr/bin:/usr/sbin:/bin"
+    } ->
     
     exec { "oxid-check-remove-setup": 
-      command => "rm -r -f ${configurations['sShopDir']}/setup", 
-      onlyif => "test -d ${configurations['sShopDir']}/setup",
+      command => "rm -r -f ${shop_dir}/setup", 
+      onlyif => "test -d ${shop_dir}/setup",
+      path => "/usr/bin:/usr/sbin:/bin"
+    } ->
+    
+    exec { "oxid-check-remove-updatApp": 
+      command => "rm -r -f ${shop_dir}/updatApp", 
+      onlyif => "test -d ${shop_dir}/updatApp",
       path => "/usr/bin:/usr/sbin:/bin"
     } ->
      
 	  exec {"oxid-updateviews":
 	      path    => "/usr/bin:/usr/sbin:/bin",
-	      command => "php -c ${oxid::php::params::config} -r 'function getShopBasePath() { return \"${configurations['sShopDir']}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'",
+	      command => "php -c ${oxid::php::params::config} -r 'function getShopBasePath() { return \"${shop_dir}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'",
 	  }
 }
