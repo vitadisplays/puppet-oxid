@@ -8,7 +8,7 @@
   "summary": "",
   "version": "0.0.1",
   "checksums": {
-    "Modulefile": "08de9916be95d819b2cd895463177034",
+    "Modulefile": "8ce51508f2ebc0488922e6216d8eebae",
     "README.markdown": "3aaee7a081a2e581517409d29b701d32",
     "Rakefile": "f37e6131fe7de9a49b09d31596f5fbf1",
     "files\\mysql\\my.cnf": "d41d8cd98f00b204e9800998ecf8427e",
@@ -35,11 +35,11 @@
   "dependencies": [
     {
       "name": "puppetlabs/stdlib",
-      "version_requirement": "\u003d\u003d4.1.0"
+      "version_requirement": "\u003e\u003d4.1.0"
     },
     {
       "name": "puppetlabs/apt",
-      "version_requirement": "\u003d\u003d1.1.0"
+      "version_requirement": "\u003e\u003d1.1.0"
     }
   ]
 }
