@@ -321,9 +321,9 @@ class oxid(
       
     case $name {
       /^(file:)(\/\/)*(.*)/ : {                    
-                    exec { "extractPhar-${name}":
-                      command => "phar-extract.php $3 ${shop_dir}", 
-                      path   => "${module_path}/functions/oxid"
+                    exec { "extractPhar ${name}":
+                      command => "php -f ${module_path}/functions/oxid/phar-extract.php $3 ${shop_dir}", 
+                      path   => "/usr/bin:/usr/sbin:/bin"
                     }
                   }
                   
@@ -388,8 +388,8 @@ class oxid(
     $cmd = inline_template('<%= require "json"; JSON.generate jsonHash %>')
     
     exec { "oxid-module '${cmd}'":        
-        command => "oxid-modules.php '${cmd}'", 
-        path   => "${module_path}/functions/oxid"
+        command => "php -f ${module_path}/functions/oxid/oxid-modules.php '${cmd}'", 
+        path   => "/usr/bin:/usr/sbin:/bin"
       } 
   }
   
@@ -452,8 +452,8 @@ class oxid(
     $cmd = inline_template('<%= require "json"; JSON.generate jsonHash %>')
     
     exec { "oxid-config ${cmd}":        
-        command => "oxid-config.php '${cmd}'", 
-        path   => "${module_path}/functions/oxid"
+        command => "php -f ${module_path}/functions/oxid/oxid-config.php '${cmd}'", 
+        path   => "/usr/bin:/usr/sbin:/bin"
       }
   }
   
@@ -498,8 +498,8 @@ class oxid(
     $cmd = inline_template('<%= require "json"; JSON.generate jsonHash %>')
     
     exec { "oxid-config ${cmd}":        
-        command => "oxid-config.php '${cmd}'", 
-        path   => "${module_path}/functions/oxid"
+        command => "php -f ${module_path}/functions/oxid/oxid-config.php '${cmd}'", 
+        path   => "/usr/bin:/usr/sbin:/bin"
      }
   }
   
@@ -561,7 +561,7 @@ class oxid(
               timeout => 240
             }
          } else {
-           exec { ["php '${shop_dir}/updateApp/run_cli.php'"] :        
+           exec { ["php -f '${shop_dir}/updateApp/run_cli.php'"] :        
             path   => "/usr/bin:/usr/sbin:/bin",
             require => Exec[$cmds],
             timeout => 240

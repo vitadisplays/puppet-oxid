@@ -20,7 +20,7 @@
     "functions\\oxid\\phar-extract.php": "41ab0e40a23499ea6c2d84d2903aac9e",
     "manifests\\apache.pp": "7d4cbf72d5470c4cb5b9ff72c61d83dc",
     "manifests\\common.pp": "6449ce621183129afe558c7ff90227d7",
-    "manifests\\init.pp": "0363bbfc09f9632135a44026c24ca6f6",
+    "manifests\\init.pp": "bca510d3cf0ba7b5c553093a8b87ac26",
     "manifests\\mysql.pp": "2efe07901779e690998debf656752759",
     "manifests\\params.pp": "7a701cd8879a2fdc951b8bd31d5c0b7b",
     "manifests\\php.pp": "48a7b664995ce703578f5e57a3a8178e",
