@@ -23,7 +23,7 @@
     "manifests\\init.pp": "bca510d3cf0ba7b5c553093a8b87ac26",
     "manifests\\mysql.pp": "2efe07901779e690998debf656752759",
     "manifests\\params.pp": "7a701cd8879a2fdc951b8bd31d5c0b7b",
-    "manifests\\php.pp": "48a7b664995ce703578f5e57a3a8178e",
+    "manifests\\php.pp": "b4c710c4092c41717dc6b9e18b98bdca",
     "manifests\\stages.pp": "680d5a35b7d94658d699e7ccf0ef1795",
     "spec\\spec.opts": "a600ded995d948e393fbe2320ba8e51c",
     "spec\\spec_helper.rb": "3ea886dd135e120afa31e0aab12e85b0",

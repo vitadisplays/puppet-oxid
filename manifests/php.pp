@@ -22,7 +22,8 @@ class oxid::php {
   file { "/etc/php53/apache2/conf.d/zend_guard.ini":
     owner   => "root",
     group   => "root",
-    source  => "${module_path}/files/zend/zend_guard.ini"
+    source  => "${module_path}/files/zend/zend_guard.ini",
+    notify => Exec["force-reload-apache2"]
   } ->
   
   file { $oxid::php::params::config:
