@@ -1,18 +1,6 @@
-class oxid::php::params {
-  $packages = [
-    'php53',
-    'php53-dev',
-    'php53-apc',
-    'php53-pear',
-    'php53-common',
-    'php53-memcache',
-    'shtool',
-    'ssl-cert',
-    'uuid-dev', "libapache2-mod-php53"]    
-    
-  $pear_packages = ['MDB2_Driver_mysql', 'Net_Curl']
+/*class oxid::php::params {
   $config = "/etc/php53/apache2/php.ini"
-}
+}*/
 
 class oxid::mysql::params {
   $server_package_name = "mysql-server"
@@ -32,14 +20,33 @@ class oxid::params {
   $config_key = 'fq45QS09_fqyx09239QQ'
 }
 
-class oxid::apache::params {
+class oxid::apache2::params {
   $user = "www-data"
   $group = "www-data"
-  $mods_enabled = ["php5", "rewrite", "deflate", "headers", "expires", "ssl"]
-  $mods_disabled = []
-  $packages = ["apache2"]
-  $apache2_sites = "/etc/apache2/sites"
-  $apache2_mods = "/etc/apache2/mods"
+  $packages = ['php5', 'php5-dev', 'php-apc', 'php-pear', 'php5-common', 'php5-mysql', 'php5-curl', 'php5-memcache', 'libapache2-mod-php5']
+  $sites_path = "/etc/apache2/sites"
+  $mods_path = "/etc/apache2/mods"
+}
+
+class oxid::zend_server::params inherits oxid::apache2::params {
+ $user = "www-data"
+ $group = "www-data"
+ $packages = [
+    'php-5.3-dev-zend-server',
+    'php-5.3-mssql-zend-server',
+    'php-5.3-pdo-mysql-zend-server',
+    'php-5.3-curl-zend-server',
+    'php-5.3-gd-zend-server',
+    'php-5.3-imagick-zend-server',
+    'php-5.3-bcmath-zend-server',
+    'php-5.3-mbstring-zend-server',
+    'php-5.3-mcrypt-zend-server',
+    'php-5.3-apc-zend-server',
+    'php-5.3-memcache-zend-server',
+    'php-5.3-xmlrpc-zend-server',
+    'libapache2-mod-php-5.3-zend-server']
+  $sites_path = "/etc/apache2/sites"
+  $mods_path = "/etc/apache2/mods"
 }
 
 class oxid::common::params {
@@ -47,6 +54,9 @@ class oxid::common::params {
   $packages = [	   
 	  'gzip', 
 	  'zip',
+	  'unzip',
 	  'mysql-client',
-	  'expect']
+	  'expect','shtool',
+    'ssl-cert',
+    'uuid-dev']
 }

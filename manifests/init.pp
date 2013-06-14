@@ -12,37 +12,23 @@
 #
 
 class oxid(
-    $source,
-    $vhosts = undef,
-    $configurations
+    $source,    
+    $configurations,
+    $config_content,
+    $htaccess_content = undef
     ) {    
   
-  $config_keys = keys($configurations)
+  /*$config_keys = keys($configurations)*/
   
   include oxid::stages
 	include 'stdlib'
 	include oxid::params
 	include oxid::common::params  
-	include oxid::mysql::params
-	include oxid::apache::params
-	include oxid::php::params
   
-  class {
-    oxid::common: stage => pre;    
-  } ->
   
-  class {
-    oxid::php:;    
-  }   
-  
-  if ($vhosts != undef) {
-    class {
-      oxid::apache:   vhosts => $vhosts;    
-    }
-  }  
-  
-  oxid::install{"${name}-base-install": 
-    shop_dir => $configurations['sShopDir'], 
+       
+  oxid::install{"oxid-base-install": 
+    shop_dir => $configurations['sShopDir'],
     source => $source,
     db_host         => $configurations['dbHost'],
     db_name         => $configurations['dbName'],
@@ -50,33 +36,36 @@ class oxid(
     db_password     => $configurations['dbPwd'],
     utf8            => $configurations['iUtfMode'],
     mysql_user => $configurations['mysql_user'],
-    mysql_password => $configurations['mysql_password'],
-    require => Class [oxid::php]
-  } ->  
-
-  oxid::baseconfig{ $config_keys : 
+    mysql_password => $configurations['mysql_password']    
+  }
+  
+  file { "${configurations['sShopDir']}/config.inc.php":
+      ensure => 'present',
+      mode => "0444",
+      content => $config_content,
+      require => Oxid::Install["oxid-base-install"]
+  } 
+  
+  if $htaccess_content != undef {
+	  file { "${configurations['sShopDir']}/.htaccess":
+	      ensure => 'present',
+	      mode => "0444",
+	      content => $htaccess_content,
+      require => Oxid::Install["oxid-base-install"]
+	  }
+  } else {
+    file { "${configurations['sShopDir']}/.htaccess":
+        ensure => 'present',
+        mode => "0444",
+      require => Oxid::Install["oxid-base-install"]
+    }
+  }
+  
+  /*oxid::baseconfig{ $config_keys : 
       config_file     => "${configurations['sShopDir']}/config.inc.php",
-      configurations => $configurations
-  }  
-  
-  /*$requires = [Oxid::BaseConfig[$config_keys], Oxid::Install["${name}-base-install"]]
-  
-  if $dataSources != undef {
-    importData {$dataSources: shop_dir => $configurations['sShopDir'], require => $requires } 
-  }
-  
-  if $sqlSources != undef {
-    importSQL {$sqlSources: shop_dir => $configurations['sShopDir'], host => $configurations['dbHost'], db => $configurations['dbName'], mysql_user => $configurations['dbUser'], mysql_password => $configurations['dbPwd'], require => $requires }
-  }
-  
-  if $archives != undef {
-    extractPhar {$archives: require => $requires}
-  }*/
-  
-  /*clean { "${name}-clean": require => $requires} ->
-  
-  check { "${name}-post-check": shop_dir => $configurations['sShopDir'], compile_dir => $configurations['sCompileDir'], require => Oxid::Baseconfig[$config_keys]}*/  
-  
+      configurations => $configurations,
+      require => Oxid::Install ["oxid-base-install"]
+  }*/  
 
   class {
     oxid::lastcheck: 
@@ -96,92 +85,62 @@ class oxid(
     $db_password,
     $utf8  = '0'
     ) {
-    $process_name = $name
-     
-    exec { "${process_name}-delete-dir":
-      command => "rm -r -f ${shop_dir}",
+    
+    exec { "oxid-delete-dir":
+      command => "rm -r ${shop_dir}",
       path    => "/usr/bin:/usr/sbin:/bin",
       onlyif  => "test -d ${shop_dir}"
-    } ->
+    }
      
-    exec { "${process_name}-create-dir":
+    exec { "oxid-dir":
       command => "mkdir -p ${shop_dir}",
       path    => "/usr/bin:/usr/sbin:/bin",
-      unless  => "test -d ${shop_dir}",
-      require => Exec["${process_name}-delete-dir"]
+      require => Exec["oxid-delete-dir"]
     }
     
     case $source {
       /^(file:)(\/\/)*(.*)/ : { 
-          exec { "${process_name}-source":
+          exec { "oxid-source":
             cwd     => "${shop_dir}",
             command => "unzip $3",
             path    => "/usr/bin:/usr/sbin:/bin",
-            require => Exec["${process_name}-create-dir"]
+            require => [Exec["oxid-dir"], Package['unzip']]
           }                   
        }          
        default: { 
         fail("Unrecognized schema.") 
         }                  
     }
-  
-    /*mysql::server::dropdb { "${process_name}-drop-${db_name}":
-      host     => $db_host,
-      db       => $db_name,
-      user     => $mysql_user,
-      password => $mysql_password,
-      require => Exec["${process_name}-source"]
-    } ->*/
     
-    mysql::server::createdb { "${process_name}-create-${db_name}":
+    mysql::server::createdb { "oxid-create-${db_name}":
       host     => $db_host,
       db       => $db_name,
       user     => $mysql_user,
       password => $mysql_password,
       grant_user     => $db_user,
-      grant_password => $db_password,
-      require => Exec["${process_name}-source"]
+      grant_password => $db_password
     } ->
-  
-	  exec { "${process_name}-remove-setup": 
-	      command => "rm -r -f ${shop_dir}/setup", 
-	      onlyif => "test -d ${shop_dir}/setup",
-	      path => "/usr/bin:/usr/sbin:/bin",
-	      refreshonly => true,
-	    }
     
-    mysql::server::execFile { "${process_name}-import-base-${db_name}":
+    mysql::server::execFile { "oxid-import-base-${db_name}":
       host     => $db_host,
       db       => $db_name,
       user     => $db_user,
       password => $db_password,
-      sql_file     => "${shop_dir}/setup/sql/database.sql",
-      require => [Exec["${process_name}-source"]],
-      notify => Exec["${process_name}-remove-setup"]
+      sql_file     => "${shop_dir}/setup/sql/database.sql"
     }
   
     if $utf8 == '1' {
-      mysql::server::execFile { "${process_name}-convert-utf8-db":
+      mysql::server::execFile { "oxid-utf8-${db_name}":
         db       => $db_name,
         user     => $db_user,
         password => $db_password,
         sql_file => "${shop_dir}/setup/sql/latin1_to_utf8.sql",
-        require  => Mysql::Server::ExecFile ["${process_name}-import-base-db"],
-        notify => Exec["${process_name}-remove-setup"]
+        require  => Mysql::Server::ExecFile ["oxid-import-base-${db_name}"]
       }
     }    
   }
-  
-  /*define clean ($shop_dir = $oxid::params::shop_dir, $comple_dir = $oxid::params::compile_dir) {
-    $process_name = $name
-    exec { "${process_name}-${comple_dir}":
-      command => "rm -r -f ${comple_dir}/tmp/*",
-      path   => "/usr/bin:/usr/sbin:/bin",
-      unless => "test -d ${comple_dir}/tmp"
-    }
-  }*/
 
-  define baseconfig ($config_file, $configurations) {
+  /*define baseconfig ($config_file, $configurations) {
     $raw_value = $configurations[$name]
     
     $config_value1 = type($raw_value) ? {
@@ -196,49 +155,22 @@ class oxid(
     
     replace { "oxid-config ${name} => ${config_value}":
         file        => $config_file,
-        pattern     => "(\\\$this->${name}\\s*=\\s*)(.*)(;)",
-        replacement => "\\1${config_value}\\3"
+        pattern     => "/(\\\$this\\-\\>${name}\\s*=\\s*)(.*)(;)/",
+        replacement => "\$1${config_value}\$3"
     } 
   }
 
-  define replace ($file, $pattern, $replacement) {
+  define replace($file, $pattern, $replacement) {
+    $module_path = get_module_path('oxid')
     $pattern_no_slashes = regsubst($pattern, '/', '\\/', 'G', 'U')
     $replacement_no_slashes = regsubst($replacement, '/', '\\/', 'G', 'U')
 
     exec { "${name}": command => "perl -pi -e \"s/$pattern_no_slashes/$replacement_no_slashes/\" '$file'", path => "/usr/bin:/usr/sbin:/bin"}
-  }  
-  
-  /*define check ($shop_dir, $compile_dir) { 
-    exec { "${name}-root-dir": 
-      command => "chown -R www-data:www-data ${shop_dir} & chmod -R 0775 ${shop_dir}", 
-      onlyif => "test -d ${shop_dir}",
-      path => "/usr/bin:/usr/sbin:/bin"
-    }
     
-    exec { "${name}-oxid-config": 
-      command => "chown -R www-data:www-data ${shop_dir}/config.inc.php & chmod -R 0444 ${shop_dir}/config.inc.php", 
-      onlyif => "test -f ${shop_dir}/config.inc.php",
-      path => "/usr/bin:/usr/sbin:/bin"
+    exec { "php -f ${module_path}/functions/replace_in_files.php '${file}' '${pattern_no_slashes}' \"${replacement_no_slashes}\"":
+      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
     }
-    
-    exec { "${name}-oxid-htaccess": 
-      command => "chown -R www-data:www-data ${shop_dir}/.htaccess & chmod -R 0444 ${shop_dir}/.htaccess", 
-      onlyif => "test -f ${shop_dir}/.htaccess",
-      path => "/usr/bin:/usr/sbin:/bin"
-    }
-    
-    exec { "${name}-compile-dir": 
-      command => "chown -R www-data:www-data ${compile_dir} & chmod -R 0775 ${compile_dir}", 
-      onlyif => "test -d ${compile_dir}",
-      path => "/usr/bin:/usr/sbin:/bin"
-    }
-    
-    exec { "${name}-remove-setup": 
-      command => "rm -r -f ${shop_dir}/setup", 
-      onlyif => "test -d ${shop_dir}/setup",
-      path => "/usr/bin:/usr/sbin:/bin"
-    }
-  }*/
+  }  */
  
   define syncData($url, $excludes = undef, $dir = $oxid::params::shop_dir, $private_key = undef) { 
     if $excludes != undef {
@@ -323,7 +255,7 @@ class oxid(
       /^(file:)(\/\/)*(.*)/ : {                    
                     exec { "extractPhar ${name}":
                       command => "php -f ${module_path}/functions/oxid/phar-extract.php $3 ${shop_dir}", 
-                      path   => "/usr/bin:/usr/sbin:/bin"
+                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
                     }
                   }
                   
@@ -385,35 +317,13 @@ class oxid(
       err("Module ensure should be present, absent or override")
     }
     
-    $cmd = inline_template('<%= require "json"; JSON.generate jsonHash %>')
+    $cmd = inline_template('<%= require "json"; JSON.generate @jsonHash %>')
     
     exec { "oxid-module '${cmd}'":        
         command => "php -f ${module_path}/functions/oxid/oxid-modules.php '${cmd}'", 
-        path   => "/usr/bin:/usr/sbin:/bin"
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
       } 
   }
-  
-  /*define removeShopConfigSingleAction($shopid, $host, $port, $db, $user, $password) {
-    $varname = $name
-    $module_path = get_module_path('oxid')
-    
-    $jsonHash = { 
-        'command' => 'remove', 
-        'varname' => $varname, 
-        'shopid' => $shopid,
-        'host' => "${host}:${port}",
-        'db' => $db,
-        'user' => $user,
-        'password' => $password
-      }
-    
-    $cmd = inline_template('<%= require "json"; JSON.generate jsonHash %>')
-    
-    exec { "oxid-config ${host}:${port} remove ${varname}":        
-        command => "oxid-config.php '${cmd}'", 
-        path   => "${module_path}/functions/oxid"
-      }
-  }*/
     
   define configSingleAction($shopid, $configs, $host, $port, $db, $user, $password, $config_key) {
     $varname = $name     
@@ -449,11 +359,11 @@ class oxid(
       'configkey' => $config_key
     } 
     
-    $cmd = inline_template('<%= require "json"; JSON.generate jsonHash %>')
+    $cmd = inline_template('<%= require "json"; JSON.generate @jsonHash %>')
     
     exec { "oxid-config ${cmd}":        
         command => "php -f ${module_path}/functions/oxid/oxid-config.php '${cmd}'", 
-        path   => "/usr/bin:/usr/sbin:/bin"
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
       }
   }
   
@@ -495,11 +405,11 @@ class oxid(
         'password' => $password
       }
     
-    $cmd = inline_template('<%= require "json"; JSON.generate jsonHash %>')
+    $cmd = inline_template('<%= require "json"; JSON.generate @jsonHash %>')
     
     exec { "oxid-config ${cmd}":        
         command => "php -f ${module_path}/functions/oxid/oxid-config.php '${cmd}'", 
-        path   => "/usr/bin:/usr/sbin:/bin"
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
      }
   }
   
@@ -536,7 +446,8 @@ class oxid(
         cwd => "${oxid::common::params::tmp_dir}",
         path   => "/usr/bin:/usr/sbin:/bin",
         unless => "test -d '${oxid::common::params::tmp_dir}/${filename}'",
-        timeout => 120
+        timeout => 120,
+        require => Package['unzip']
      } ->
      
       exec { $cmds:        
@@ -562,7 +473,7 @@ class oxid(
             }
          } else {
            exec { ["php -f '${shop_dir}/updateApp/run_cli.php'"] :        
-            path   => "/usr/bin:/usr/sbin:/bin",
+            path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
             require => Exec[$cmds],
             timeout => 240
           }         
@@ -576,11 +487,55 @@ class oxid(
           require => Exec[$cmds]
        }  
      }  
-  }   
+  } 
 }
 
-class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "www-data") {  
+class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "www-data") {
     exec { "oxid-check-root-dir": 
+      command => "chown -R ${owner}:${group} ${shop_dir} & chmod -R ug+rw ${shop_dir}", 
+      path => "/usr/bin:/usr/sbin:/bin"
+    }
+     
+    /*file { "oxid-check-root-dir":
+      path => "${shop_dir}",
+      ensure => 'present',
+      mode => "+ug+rw",
+      owner => $owner,
+      group => $group,
+      recurselimit => 0
+    }
+    
+    file { "oxid-check-oxid-config":
+      path => "${shop_dir}/config.inc.php",
+      ensure => 'present',
+      mode => "0444",
+      require => Exec["oxid-check-root-dir"]
+    }
+    
+    file { "oxid-check-oxid-htaccess":
+      path => "${shop_dir}/.htaccess",
+      ensure => 'present',
+      mode => "0444",
+      require => Exec["oxid-check-root-dir"]
+    }*/
+    
+    file { "${shop_dir}/tmp":
+      ensure => 'present',
+      mode => "ug+rw",
+      require => Exec["oxid-check-root-dir"]
+    }  
+
+    file { "${shop_dir}/setup":
+      ensure => 'absent',
+      force => true
+    }
+    
+    file { "${shop_dir}/updateApp":
+      ensure => 'absent',
+      force => true
+    }
+     
+    /*exec { "oxid-check-root-dir": 
       command => "chown -R ${owner}:${group} ${shop_dir} & chmod -R ug+rw ${shop_dir}", 
       path => "/usr/bin:/usr/sbin:/bin"
     } ->
@@ -615,10 +570,10 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
       command => "rm -r -f ${shop_dir}/updatApp", 
       onlyif => "test -d ${shop_dir}/updatApp",
       path => "/usr/bin:/usr/sbin:/bin"
-    } ->
+    } ->*/
      
-	  exec {"oxid-updateviews":
-	      path    => "/usr/bin:/usr/sbin:/bin",
-	      command => "php -c ${oxid::php::params::config} -r 'function getShopBasePath() { return \"${shop_dir}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'",
-	  }
+	  exec {"oxid-updateviews-${configurations['sShopDir']}":
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+        command => "php -r 'function getShopBasePath() { return \"${configurations['sShopDir']}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'",
+  }
 }

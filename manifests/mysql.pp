@@ -1,4 +1,4 @@
-class oxid::mysql::server($user = "root", $password, $config_template = undef) {
+class oxid::mysql::server($user = "root", $password, $config_content = undef) {
   include oxid::common::params
   include oxid::mysql::params
   $module_path = get_module_path('oxid')
@@ -7,22 +7,22 @@ class oxid::mysql::server($user = "root", $password, $config_template = undef) {
     ensure  => installed
   }
 
+  if ($config_content != undef) {
+    file { "/etc/mysql/my.cnf":
+      owner   => "root",
+      group   => "root",
+      content => $config_content,
+      notify  => Service["mysql"],
+      require => Package[$oxid::mysql::params::server_package_name],
+    } 
+  }
+  
   service { "mysql":
     enable   => true,
     ensure   => running,
     require  => Package[$oxid::mysql::params::server_package_name],
     provider => 'upstart',
-  } 
-
-  if ($config_template != undef) {
-	  file { "/etc/mysql/my.cnf":
-	    owner   => "root",
-	    group   => "root",
-	    content => template($config_template),
-	    notify  => Service["mysql"],
-	    require => Package[$oxid::mysql::params::server_package_name],
-	  } 
-	}
+  } ->
 
   exec { "mysql-set-password":
     unless  => "mysqladmin -uroot -p$password status",
@@ -38,7 +38,7 @@ class oxid::mysql::server($user = "root", $password, $config_template = undef) {
     exec { "mysql-create-${host}-${db}-db":
       unless  => "mysql -h ${host} -uroot -p${password} ${db}",
       path    => ["/bin", "/usr/bin"],
-      command => "mysql -h ${host} -uroot -p${password} -e \"drop database IF EXISTS ${db}; create database ${db}; grant all on ${db}.* to ${real_grant_user}@localhost identified by '${real_grant_password}';\"",
+      command => "mysql -h ${host} -uroot -p${password} -e \"drop database IF EXISTS ${db}; create database ${db}; grant all on ${db}.* to ${real_grant_user}@localhost identified by '${real_grant_password}';FLUSH PRIVILEGES;\"",
     }
   }
   
