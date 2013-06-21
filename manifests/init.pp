@@ -24,8 +24,6 @@ class oxid(
 	include 'stdlib'
 	include oxid::params
 	include oxid::common::params  
-  
-  
        
   oxid::install{"oxid-base-install": 
     shop_dir => $configurations['sShopDir'],
@@ -90,27 +88,15 @@ class oxid(
       command => "rm -r ${shop_dir}",
       path    => "/usr/bin:/usr/sbin:/bin",
       onlyif  => "test -d ${shop_dir}"
-    }
+    } ->
      
     exec { "oxid-dir":
       command => "mkdir -p ${shop_dir}",
       path    => "/usr/bin:/usr/sbin:/bin",
       require => Exec["oxid-delete-dir"]
-    }
+    } ->
     
-    case $source {
-      /^(file:)(\/\/)*(.*)/ : { 
-          exec { "oxid-source":
-            cwd     => "${shop_dir}",
-            command => "unzip $3",
-            path    => "/usr/bin:/usr/sbin:/bin",
-            require => [Exec["oxid-dir"], Package['unzip']]
-          }                   
-       }          
-       default: { 
-        fail("Unrecognized schema.") 
-        }                  
-    }
+    oxid::unpack{$source: destDir => $shop_dir } ->
     
     mysql::server::createdb { "oxid-create-${db_name}":
       host     => $db_host,
@@ -246,6 +232,36 @@ class oxid(
       command => "sh -c 'for file in ${work_dir}/sql/*.sql; do mysql -h ${host} -u${mysql_user} -p${mysql_password} ${db} < \$file ; done'",
       path   => "/usr/bin:/usr/sbin:/bin"
     }     
+  }
+  
+  define unpack($destDir = $oxid::params::shop_dir) {
+    $module_path = get_module_path('oxid')
+      
+    case $name {
+      /^(file:)(\/\/)*(.*\.phar$)/ : {                    
+                    exec { "unphar ${name}":
+                      command => "php -f ${module_path}/functions/oxid/phar-extract.php '$3' '${destDir}'", 
+                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
+                    }
+                  }
+      /^(file:)(\/\/)*(.*\.zip$)/ : {                    
+                    exec { "unzip ${name}":
+                      command => "unzip -o --qq '$3'",
+                      cwd => $destDir,
+                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
+                    }
+                  }
+      /^(file:)(\/\/)*(.*\.tar.gz$)/ : {                    
+                    exec { "untar/gz ${name}":
+                      command => "tar -zxf '$3'",
+                      cwd => $destDir,
+                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
+                    }
+                  }                                    
+       default: { 
+        fail("Unrecognized schema: $name") 
+        }                  
+    }
   }
   
   define extractPhar($shop_dir = $oxid::params::shop_dir) {
