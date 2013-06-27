@@ -41,7 +41,8 @@ class oxid(
       ensure => 'present',
       mode => "0444",
       content => $config_content,
-      require => Oxid::Install["oxid-base-install"]
+      require => Oxid::Install["oxid-base-install"],
+      notify => Exec["force-reload-httpd-server"]
   } 
   
   if $htaccess_content != undef {
@@ -49,13 +50,15 @@ class oxid(
 	      ensure => 'present',
 	      mode => "0444",
 	      content => $htaccess_content,
-      require => Oxid::Install["oxid-base-install"]
+      require => Oxid::Install["oxid-base-install"],
+      notify => Exec["force-reload-httpd-server"]
 	  }
   } else {
     file { "${configurations['sShopDir']}/.htaccess":
         ensure => 'present',
         mode => "0444",
-      require => Oxid::Install["oxid-base-install"]
+      require => Oxid::Install["oxid-base-install"],
+      notify => Exec["force-reload-httpd-server"]
     }
   }
   
@@ -590,7 +593,7 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
      
 	  exec {"oxid-updateviews-${configurations['sShopDir']}":
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
-        command => "php -r 'function getShopBasePath() { return \"${configurations['sShopDir']}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'",
-        notify => Exec["force-reload-httpd-server"]
+        command => "php -r 'function getShopBasePath() { return \"${configurations['sShopDir']}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'"
+        
   }
 }
