@@ -591,5 +591,6 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
 	  exec {"oxid-updateviews-${configurations['sShopDir']}":
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
         command => "php -r 'function getShopBasePath() { return \"${configurations['sShopDir']}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'",
+        notify => Exec["force-reload-httpd-server"]
   }
 }

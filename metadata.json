@@ -21,7 +21,7 @@
     "functions\\replace_in_files.php": "9977b0584fe94df51f3b46088273b0e7",
     "manifests\\apache2.pp": "5d3f00d7a2a4d1326e8edf07aec169c8",
     "manifests\\common.pp": "3f59e0169ed032c6137e420f5fac5546",
-    "manifests\\init.pp": "4bf74bade3937ab97a99bf951901be7f",
+    "manifests\\init.pp": "5db0a5a40a160c597e535b570440558b",
     "manifests\\mysql.pp": "986b3559f40e1ea5fe189c1e9b1ce61d",
     "manifests\\params.pp": "ec76fb730a5fa02cf6d8254ab5f69f52",
     "manifests\\ppa_php53.pp": "e4b7f1e46c7c2c13bf637764e984a292",
