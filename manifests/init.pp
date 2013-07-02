@@ -60,13 +60,7 @@ class oxid(
       require => Oxid::Install["oxid-base-install"],
       notify => Exec["force-reload-httpd-server"]
     }
-  }
-  
-  /*oxid::baseconfig{ $config_keys : 
-      config_file     => "${configurations['sShopDir']}/config.inc.php",
-      configurations => $configurations,
-      require => Oxid::Install ["oxid-base-install"]
-  }*/  
+  } 
 
   class {
     oxid::lastcheck: 
@@ -128,156 +122,160 @@ class oxid(
       }
     }    
   }
+  
+  define importData ($dest_dir, $tmp_dir = undef, $options = undef, $timeout = 18000) {      
+    case $name {     
+      /^(https*:)(\/\/)*(.*\.tar\.gz|\.zip|\.phar)$/ : {
+          if $tmp_dir != undef {
+            $real_tmp_Dir = $tmp_dir 
+          } else {
+		        $real_tmp_Dir = inline_template('<%= Dir.mktmpdir %>')
+          }
+          
+          $filename = "$3"
+          $basename = inline_template('<%= File.basename(@filename) %>')
+          
+	        $real_output_file = "${real_tmp_Dir}/${basename}"
+	
+	        exec { "wget ${name}":
+			      command => "wget ${name} -O ${real_output_file}",
+			      path   => "/usr/bin:/usr/sbin:/bin",
+			      timeout => $timeout			      
+			    } ->
+			    
+			    unpack{$real_output_file : 
+			        destDir => $dest_dir, 
+			        timeout => $timeout,
+              require => Exec["wget ${name}"]
+          }
+			    
+			    if $tmp_dir == undef {
+				    exec { "${name}-remove-tmp-files":
+				        command => "rm -f -r ${real_tmp_Dir}",
+				        path   => "/usr/bin:/usr/sbin:/bin",
+                require => Unpack[$real_output_file]                
+            }			    
+				  }    
+      }
+      
+      /^(scp:)(\/\/)*(.*:)(\/)?(.*)$/ : {
+        if $name =~ /.*(\.tar\.gz|\.zip|\.phar)$/ {
+          $extra_options = []
+  
+          $filename = "$5"
+          $basename = inline_template('<%= File.basename(@filename) %>')
+        
+          $real_output_dir = $tmp_dir ? {undef => inline_template('<%= Dir.mktmpdir %>') , default => $tmp_dir}
+          $real_output_file = "${real_output_dir}/${basename}"
+        } else {
+          $extra_options = ["-r"]
+        
+          $real_output_dir = $dest_dir
+          $real_output_file = $dest_dir
+        }      
+        
+        $real_options = concat($extra_options, $options)
+        
+        if $options != undef {
+          $option_str = join($real_options, ' ')
+        } else {
+          $option_str = ""
+        }
+        
+        $command = "scp ${option_str} $3$4$5"
 
-  /*define baseconfig ($config_file, $configurations) {
-    $raw_value = $configurations[$name]
-    
-    $config_value1 = type($raw_value) ? {
-      'string' => "'${raw_value}'",
-      default => $raw_value
-    }
-    
-    $config_value = $config_value1 ? {
-      /(^')('.*')('$)/ => "$2",
-      default => $config_value1
-    }
-    
-    replace { "oxid-config ${name} => ${config_value}":
-        file        => $config_file,
-        pattern     => "/(\\\$this\\-\\>${name}\\s*=\\s*)(.*)(;)/",
-        replacement => "\$1${config_value}\$3"
+        exec { "scp ${name}":
+          command => "$command .",
+          path   => "/usr/bin:/usr/sbin:/bin",
+          cwd    => $real_output_dir,
+          timeout => $timeout 
+        }
+        
+        if $name =~ /.*(\.tar\.gz|\.zip|\.phar$)/ and $tmp_dir == undef {
+          unpack{$real_output_file : 
+              destDir => $dest_dir,
+              timeout => $timeout,
+              require => Exec["scp ${name}"]} ->
+          
+          exec { "${name}-remove-tmp-files":
+              command => "rm -f -r ${tmp_dir}",
+              path   => "/usr/bin:/usr/sbin:/bin"
+          }
+        }        
+      } 
+      
+      /^(file*:)(\/\/)*(.*\.tar\.gz|\.zip|\.phar)$/ : {
+        unpack{$3 : 
+              destDir => $dest_dir,
+              timeout => $timeout}
+      }
+      default : { fail("${name} not recordnized.")}     
     } 
   }
-
-  define replace($file, $pattern, $replacement) {
-    $module_path = get_module_path('oxid')
-    $pattern_no_slashes = regsubst($pattern, '/', '\\/', 'G', 'U')
-    $replacement_no_slashes = regsubst($replacement, '/', '\\/', 'G', 'U')
-
-    exec { "${name}": command => "perl -pi -e \"s/$pattern_no_slashes/$replacement_no_slashes/\" '$file'", path => "/usr/bin:/usr/sbin:/bin"}
-    
-    exec { "php -f ${module_path}/functions/replace_in_files.php '${file}' '${pattern_no_slashes}' \"${replacement_no_slashes}\"":
-      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
-    }
-  }  */
- 
-  define syncData($url, $excludes = undef, $dir = $oxid::params::shop_dir, $private_key = undef) { 
-    if $excludes != undef {
-      $real_join = join($excludes, " --exclude=")
-      $real_exclude = " --exclude=${real_join}"
-    } else {
-      $real_exclude = ""
-    }
-    
-    if $private_key != undef {
-      $real_privatekey_option = " -i ${private_key}"
-    } else {
-      $real_privatekey_option = ""
-    }
-                      
-	  exec { "rsync -avz${real_exclude} -e 'ssh ${real_privatekey_option} -oStrictHostKeyChecking=no' ${url} ${dir}":
-			path   => "/usr/bin:/usr/sbin:/bin",
-			timeout => 0
-		}
+  
+  define importSQL ($host = "localhost", $db = $oxid::params::db_name, $mysql_user = $oxid::params::db_user, $mysql_password = $oxid::params::db_password, $options = undef, $dump_options = "--add-drop-table --allow-keywords --skip-extended-insert --hex-blob --default-character-set=latin1") {
+    case $name {
+      /^(https*|scp|file):(\/\/)*(.*\.tar\.gz|\.zip|\.phar)$/ : {
+        $tmp_dir = inline_template('<%= Dir.mktmpdir %>')        
+        
+        importData{$name: dest_dir => $tmp_dir, tmp_dir => $tmp_dir, options => $options} ->
+        
+        exec { "mysql import file ${name}":
+		      command => "sh -c 'for file in ${tmp_dir}/*.sql; do mysql -h ${host} -u${mysql_user} -p${mysql_password} ${db} < \$file ; done'",
+		      path   => "/usr/bin:/usr/sbin:/bin"
+		    } ->
+		    
+		    exec { "${name}-remove-sql-tmp-files":
+              command => "rm -f -r ${tmp_dir}",
+              path   => "/usr/bin:/usr/sbin:/bin"
+          }
+      }
+      
+      /^ssh:\/\/(.*):mysql:\/\/(.*)\/\?username=(.*)&password=(.*)/ : {
+        if $options != undef {
+          $option_str = join($options, ' ')
+        } else {
+          $option_str = ""
+        }
+      
+        $command = "ssh ${option_str} '$1' mysqldump ${dump_options} -u '$3' --password='$4' '$2' | mysql -u '${mysql_user}' --password='${mysql_password}' -D '${db}'"
+          
+        exec { $command:
+          path   => "/usr/bin:/usr/sbin:/bin"
+        }
+      }
+      
+      default : { fail("${name} not recordnized.")} 
+    }    
   }
   
-  define syncSQL($url, $remote_config, $local_config, $private_key = undef) {
-    if $private_key != undef {
-      $real_privatekey_option = " -i ${private_key}"
-    } else {
-      $real_privatekey_option = ""
-    }
-                         
-    exec { "ssh ${real_privatekey_option} -oStrictHostKeyChecking=no -C ${url} mysqldump --add-drop-table --allow-keywords --compress -u ${remote_config['dbUser']} --password=${remote_config['dbPwd']} ${remote_config['dbName']} | mysql -u ${local_config['dbUser']} --password=${local_config['dbPwd']} -D ${local_config['dbName']}":
-      path   => "/usr/bin:/usr/sbin:/bin",
-      timeout => 0
-    }
-  }
-  
-  define importData ($shop_dir = $oxid::params::shop_dir) {
-    $work_dir = "${oxid::common::params::tmp_dir}/oxid-data"
-
-    exec { "${name}-mkdirs":
-      command => "mkdir -p ${work_dir}/data",
-      path   => "/usr/bin:/usr/sbin:/bin"      
-    }
-    
-    exec { "${name}-wget-data":
-      command => "wget --progress=bar ${name} -O ${work_dir}/data/data.tar.gz",
-      path   => "/usr/bin:/usr/sbin:/bin" 
-    }  
-    
-    exec { "${name}-untar-data":
-      command => "tar xvfz ${work_dir}/data/data.tar.gz -C ${shop_dir}",
-      path   => "/usr/bin:/usr/sbin:/bin"
-    }  
-  }
-  
-  define importSQL ($shop_dir, $host = "localhost", $db = $oxid::params::db_name, $mysql_user = $oxid::params::db_user, $mysql_password = $oxid::params::db_password) {
-    $work_dir = "${oxid::common::params::tmp_dir}/oxid-data"
-
-    exec { "${name}-importSQL-mkdir":
-      command => "mkdir -p ${work_dir}/sql",
-      path   => "/usr/bin:/usr/sbin:/bin"
-    } ->
-    
-    exec { "${name}-wget-sql":
-      command => "wget --progress=bar ${name} -O ${work_dir}/sql/sql.tar.gz",
-      path   => "/usr/bin:/usr/sbin:/bin"
-    } ->
-    
-    exec { "${name}-untar-sql":
-      command => "tar xvfz ${work_dir}/sql/sql.tar.gz -C ${work_dir}/sql/",
-      path   => "/usr/bin:/usr/sbin:/bin"
-    } ->
-    
-    exec { "${name}-mysql-sql":
-      command => "sh -c 'for file in ${work_dir}/sql/*.sql; do mysql -h ${host} -u${mysql_user} -p${mysql_password} ${db} < \$file ; done'",
-      path   => "/usr/bin:/usr/sbin:/bin"
-    }     
-  }
-  
-  define unpack($destDir = $oxid::params::shop_dir) {
+  define unpack($destDir, $timeout = 0) {
     $module_path = get_module_path('oxid')
       
     case $name {
-      /^(file:)(\/\/)*(.*\.phar$)/ : {                    
+      /^(.*\.phar$)/ : {                    
                     exec { "unphar ${name}":
-                      command => "php -f ${module_path}/functions/oxid/phar-extract.php '$3' '${destDir}'", 
-                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
+                      command => "php -f ${module_path}/functions/oxid/phar-extract.php '$1' '${destDir}'", 
+                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+                      timeout => $timeout 
                     }
                   }
-      /^(file:)(\/\/)*(.*\.zip$)/ : {                    
+      /^(.*\.zip$)/ : {                    
                     exec { "unzip ${name}":
-                      command => "unzip -o --qq '$3'",
+                      command => "unzip -o --qq '$1'",
                       cwd => $destDir,
-                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
+                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+                      timeout => $timeout
                     }
                   }
-      /^(file:)(\/\/)*(.*\.tar.gz$)/ : {                    
+      /^(.*\.tar.gz$)/ : {                    
                     exec { "untar/gz ${name}":
-                      command => "tar -zxf '$3'",
+                      command => "tar -zxf '$1'",
                       cwd => $destDir,
-                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
+                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+                      timeout => $timeout
                     }
                   }                                    
-       default: { 
-        fail("Unrecognized schema: $name") 
-        }                  
-    }
-  }
-  
-  define extractPhar($shop_dir = $oxid::params::shop_dir) {
-    $module_path = get_module_path('oxid')
-      
-    case $name {
-      /^(file:)(\/\/)*(.*)/ : {                    
-                    exec { "extractPhar ${name}":
-                      command => "php -f ${module_path}/functions/oxid/phar-extract.php $3 ${shop_dir}", 
-                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"
-                    }
-                  }
-                  
        default: { 
         fail("Unrecognized schema: $name") 
         }                  

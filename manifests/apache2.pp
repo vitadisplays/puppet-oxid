@@ -1,6 +1,6 @@
 include 'stdlib'
   
-class oxid::apache2($shop_dir, $mods, $sites) {
+class oxid::apache2($mods_enabled = undef, $sites_enabled = undef,$mods_disabled = undef, $sites_disabled = undef) {
   include oxid::apache2::params
 
    # Define an apache2 site. Place all site configs into
@@ -104,7 +104,8 @@ class oxid::apache2($shop_dir, $mods, $sites) {
         owner   => root,
         group   => root,
         mode    => 644,
-        content => template($config['template'])
+        content => template($config['template']),
+        require => Package["httpd-server"]
     } ->
       
      site {
@@ -121,7 +122,7 @@ class oxid::apache2($shop_dir, $mods, $sites) {
     }
   }
   
-  $vhostnames = keys($sites)
+  $vhostnames = keys($sites_enabled)
   
   package { "httpd-server": 
     name => 'apache2',
@@ -152,18 +153,27 @@ class oxid::apache2($shop_dir, $mods, $sites) {
       ensure => running,
       hasstatus => true,
       hasrestart => true,
-      require => Package["httpd-server"],
+      require => Package["httpd-server"]
    }
    
    # Zend Guar Loader install
    zend_guard_loader_install{"zend-guard-loader-install":} ->
    
-   mod{'php5': package_require => 'libapache2-mod-php5'} ->
-   mod{$mods:} ->
+   mod{'php5': package_require => 'libapache2-mod-php5'}
    
-   site {
-      "000-default": ensure => 'absent';
-   } ->
+   if $mods_enabled != undef {
+      mod{$mods_enabled : }
+   }
    
-   vhost{$vhostnames : vhosts => $sites}
+   if $mods_disabled != undef {
+      mod{$mods_disabled : ensure => "absent"}
+   }
+   
+   if $sites_disabled != undef {
+     site{$sites_disabled : ensure => "absent"}
+   }
+   
+   if $sites_enabled != undef {
+     vhost{$vhostnames : vhosts => $sites_enabled}
+   }    
 }

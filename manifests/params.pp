@@ -13,9 +13,6 @@ class oxid::params {
   $db_name = "oxid"
   $db_user = "oxid"
   $db_password = "oxid"
-  
-  $shop_dir = "/srv/www/oxid"
-  $compile_dir = "/srv/www/oxid/tmp"
 
   $config_key = 'fq45QS09_fqyx09239QQ'
 }
