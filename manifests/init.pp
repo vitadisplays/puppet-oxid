@@ -336,7 +336,7 @@ class oxid(
     
     $cmd = inline_template('<%= require "json"; JSON.generate @jsonHash %>')
     
-    exec { "oxid-module '${cmd}'":        
+    exec { "${name}-oxid-module '${cmd}'":        
         command => "php -f ${module_path}/functions/oxid/oxid-modules.php '${cmd}'", 
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
       } 
@@ -455,7 +455,7 @@ class oxid(
   }
   
   define update($shop_dir, $update_package, $changed_full = false, $run_cli = false, $run_cli_template = undef) {
-    $filename = inline_template('<%= File.basename(update_package) %>')
+    $filename = inline_template('<%= File.basename(@update_package) %>')
 
     $cmds = ["cp -R -f updateApp/ \"${shop_dir}\"", "cp -R -f copy_this/* \"${shop_dir}\""]     
      
@@ -474,7 +474,7 @@ class oxid(
           
      if $run_cli {
          if $run_cli_template != undef {
-           $expect_filename = inline_template('<%= File.basename(run_cli_template) %>')
+           $expect_filename = inline_template('<%= File.basename(@run_cli_template) %>')
            
            file { "expect-${$name}":
               path    => "${oxid::common::params::tmp_dir}/${expect_filename}",
