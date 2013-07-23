@@ -20,7 +20,7 @@ class oxid::params {
 class oxid::apache2::params {
   $user = "www-data"
   $group = "www-data"
-  $packages = ['php5', 'php5-dev', 'php-apc', 'php-pear', 'php5-common', 'php5-mysql', 'php5-curl', 'php5-memcache', 'libapache2-mod-php5']
+  $packages = ['php5', 'php5-dev', 'php5-gd', 'php-apc', 'php-pear', 'php5-common', 'php5-mysql', 'php5-curl', 'php5-memcache', 'libapache2-mod-php5']
   $sites_path = "/etc/apache2/sites"
   $mods_path = "/etc/apache2/mods"
 }

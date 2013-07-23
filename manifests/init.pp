@@ -93,7 +93,14 @@ class oxid(
       require => Exec["oxid-delete-dir"]
     } ->
     
-    oxid::unpack{$source: destDir => $shop_dir } ->
+    oxid::unpack{$source: destPath => $shop_dir } ->
+    
+    mysql::server::dropdb { "oxid-drop-${db_name}":
+      host     => $db_host,
+      db       => $db_name,
+      user     => $mysql_user,
+      password => $mysql_password
+    } ->
     
     mysql::server::createdb { "oxid-create-${db_name}":
       host     => $db_host,
@@ -125,7 +132,7 @@ class oxid(
   
   define importData ($dest_dir, $tmp_dir = undef, $options = undef, $timeout = 18000) {      
     case $name {     
-      /^(https*:)(\/\/)*(.*\.tar\.gz|\.zip|\.phar)$/ : {
+      /^(https*:)(\/\/)*(.*\.tar\.gz|.*\.zip|.*\.gz|.*\.phar)$/ : {
           if $tmp_dir != undef {
             $real_tmp_Dir = $tmp_dir 
           } else {
@@ -144,7 +151,7 @@ class oxid(
 			    } ->
 			    
 			    unpack{$real_output_file : 
-			        destDir => $dest_dir, 
+			        destPath => $dest_dir, 
 			        timeout => $timeout,
               require => Exec["wget ${name}"]
           }
@@ -159,7 +166,7 @@ class oxid(
       }
       
       /^(scp:)(\/\/)*(.*:)(\/)?(.*)$/ : {
-        if $name =~ /.*(\.tar\.gz|\.zip|\.phar)$/ {
+        if $name =~ /.*(\.tar\.gz|\.zip|\.gz|\.phar)$/ {
           $extra_options = []
   
           $filename = "$5"
@@ -193,7 +200,7 @@ class oxid(
         
         if $name =~ /.*(\.tar\.gz|\.zip|\.phar$)/ and $tmp_dir == undef {
           unpack{$real_output_file : 
-              destDir => $dest_dir,
+              destPath => $dest_dir,
               timeout => $timeout,
               require => Exec["scp ${name}"]} ->
           
@@ -204,9 +211,9 @@ class oxid(
         }        
       } 
       
-      /^(file*:)(\/\/)*(.*\.tar\.gz|\.zip|\.phar)$/ : {
+      /^(file*:)(\/\/)*(.*\.tar\.gz|.*\.zip|.*\.gz|.*\.phar)$/ : {
         unpack{$3 : 
-              destDir => $dest_dir,
+              destPath => $dest_dir,
               timeout => $timeout}
       }
       default : { fail("${name} not recordnized.")}     
@@ -215,7 +222,7 @@ class oxid(
   
   define importSQL ($host = "localhost", $db = $oxid::params::db_name, $mysql_user = $oxid::params::db_user, $mysql_password = $oxid::params::db_password, $options = undef, $dump_options = "--add-drop-table --allow-keywords --skip-extended-insert --hex-blob --default-character-set=latin1") {
     case $name {
-      /^(https*|scp|file):(\/\/)*(.*\.tar\.gz|\.zip|\.phar)$/ : {
+      /^(https*|scp|file):(\/\/)*(.*\.tar\.gz|.*\.zip|.*\.gz|.*\.phar)$/ : {
         $tmp_dir = inline_template('<%= Dir.mktmpdir %>')        
         
         importData{$name: dest_dir => $tmp_dir, tmp_dir => $tmp_dir, options => $options} ->
@@ -249,7 +256,7 @@ class oxid(
     }    
   }
   
-  define unpack($destDir, $timeout = 0) {
+  define unpack($destPath, $timeout = 0) {
     $module_path = get_module_path('oxid')
       
     case $name {
@@ -263,19 +270,27 @@ class oxid(
       /^(.*\.zip$)/ : {                    
                     exec { "unzip ${name}":
                       command => "unzip -o --qq '$1'",
-                      cwd => $destDir,
+                      cwd => $destPath,
                       path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
                       timeout => $timeout
                     }
-                  }
+                  }                 
       /^(.*\.tar.gz$)/ : {                    
                     exec { "untar/gz ${name}":
                       command => "tar -zxf '$1'",
-                      cwd => $destDir,
+                      cwd => $destPath,
                       path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
                       timeout => $timeout
                     }
-                  }                                    
+                  } 
+      /^(.*\.gz$)/ : {
+                    $filename = inline_template("<%= File.basename(@name).chomp('.gz') %>")                                        
+                    exec { "gunzip ${name}":                      
+                      command => "gunzip -c '$1' > '${$destPath}/${filename}'",
+                      path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+                      timeout => $timeout
+                    }
+                  }                                                      
        default: { 
         fail("Unrecognized schema: $name") 
         }                  
@@ -454,10 +469,10 @@ class oxid(
      }
   }
   
-  define update($shop_dir, $update_package, $changed_full = false, $run_cli = false, $run_cli_template = undef) {
+  define update($shop_dir, $update_package, $changed_full = false, $run_cli = false, $run_cli_content= undef) {
     $filename = inline_template('<%= File.basename(@update_package) %>')
 
-    $cmds = ["cp -R -f updateApp/ \"${shop_dir}\"", "cp -R -f copy_this/* \"${shop_dir}\""]     
+    $cmds = ["cp -R -f updateApp/ \"${shop_dir}/\"", "cp -R -f copy_this/* \"${shop_dir}/\""]     
      
     exec { "unzip '${update_package}' -d '${filename}'":        
         cwd => "${oxid::common::params::tmp_dir}",
@@ -468,24 +483,23 @@ class oxid(
      } ->
      
       exec { $cmds:        
-        cwd => "${oxid::common::params::tmp_dir}/${filename}",
-        path   => "/usr/bin:/usr/sbin:/bin"
+        path   => "/usr/bin:/usr/sbin:/bin",
+        cwd => "${oxid::common::params::tmp_dir}/${filename}"
      } 
           
      if $run_cli {
-         if $run_cli_template != undef {
-           $expect_filename = inline_template('<%= File.basename(@run_cli_template) %>')
+         if $run_cli_content != undef {
+           $expect_filename = "${oxid::common::params::tmp_dir}/${filename}/updateApp/expect_run.cli"
            
-           file { "expect-${$name}":
-              path    => "${oxid::common::params::tmp_dir}/${expect_filename}",
+           file { "${expect_filename}":
               owner   => root,
               group   => root,
-              mode    => 644,
-              content => template($run_cli_template),
-              require => Exec[$cmds]
+              mode    => 744,
+              content => $run_cli_content,
+              require => [Exec["unzip '${update_package}' -d '${filename}'"], Exec[$cmds]]
           } ->
-            exec { ["${oxid::common::params::tmp_dir}/${expect_filename}"] :        
-              path   => "${oxid::common::params::tmp_dir}",
+            exec { ["expect -f '${expect_filename}'"] :
+              path   => "/usr/bin:/usr/sbin:/bin",      
               timeout => 240
             }
          } else {
@@ -589,9 +603,9 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
       path => "/usr/bin:/usr/sbin:/bin"
     } ->*/
      
-	  exec {"oxid-updateviews-${configurations['sShopDir']}":
+	  /*exec {"oxid-updateviews-${configurations['sShopDir']}":
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
         command => "php -r 'function getShopBasePath() { return \"${configurations['sShopDir']}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'"
         
-  }
+  }*/
 }

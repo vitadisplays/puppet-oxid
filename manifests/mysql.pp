@@ -38,7 +38,7 @@ class oxid::mysql::server($user = "root", $password, $config_content = undef) {
     exec { "mysql-create-${host}-${db}-db":
       unless  => "mysql -h ${host} -uroot -p${password} ${db}",
       path    => ["/bin", "/usr/bin"],
-      command => "mysql -h ${host} -uroot -p${password} -e \"drop database IF EXISTS ${db}; create database ${db}; grant all on ${db}.* to ${real_grant_user}@localhost identified by '${real_grant_password}';FLUSH PRIVILEGES;\"",
+      command => "mysql -h ${host} -uroot -p${password} -e \"create database ${db}; grant all on ${db}.* to ${real_grant_user}@localhost identified by '${real_grant_password}';FLUSH PRIVILEGES;\"",
     }
   }
   
