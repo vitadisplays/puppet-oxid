@@ -79,7 +79,7 @@ class oxid::apache2($mods_enabled = undef, $sites_enabled = undef,$mods_disabled
       file { "${$confd_dir}/zend-guard-loader.ini":
         owner   => "root",
         group   => "root",
-        content  => template("${module_path}/templates/apache2/zend-guard-loader.erb"),
+        content  => template("oxid/apache2/zend-guard-loader.erb"),
         notify => Exec["force-reload-httpd-server"]
       }
     } elsif $ensure == "absent" {
