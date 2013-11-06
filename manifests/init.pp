@@ -297,6 +297,49 @@ class oxid(
     }
   }
  
+  define install_package($shop_dir, $sql_scripts = undef, $ensure = "active", $host = "localhost", $port = $oxid::params::db_port, $db = $oxid::params::db_name, $user = $oxid::params::db_user, $password = $oxid::params::db_password) {
+    $tmp_dir = inline_template('<%= Dir.mktmpdir %>')
+    
+    unpack{ $name: 
+      destPath => $tmp_dir 
+    }
+    
+    $exist = inline_template('<%= File.exists?(File.join(@tmp_dir, "copy_this")) %>')
+    
+    if($exist) {
+      exec { "cp -R -f copy_this/* ${shop_dir}": 
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+        cwd     => $tmp_dir,
+        before => Exec["rm -r -f * ${tmp_dir}"],
+        require => Unpack[$name]     
+      }
+    } else {
+      exec { "cp -R -f * ${shop_dir}": 
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+        cwd     => $tmp_dir,
+        before => Exec["rm -r -f * ${tmp_dir}"],
+        require => Unpack[$name]       
+      }
+    }
+    
+    if($sql_scripts != undef) {
+         $sql_files = split(inline_template("<%= @sql_scripts.each {|f| File.join(@tmp_dir, f) }.join(',') %>"), ',')
+         
+         oxid::mysql::server::execFile{$sql_files:       
+		        host => $host,
+		        port => $port,
+		        db => $db,
+		        user => $user, 
+		        password => $password,
+		        before => Exec["rm -r -f * ${tmp_dir}"]
+	      }
+    }
+    
+    exec { "rm -r -f * ${tmp_dir}": 
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"     
+    }
+  }
+  
   define module($shopid, $modules = undef, $ensure = "present", $host = "localhost", $port = $oxid::params::db_port, $db = $oxid::params::db_name, $user = $oxid::params::db_user, $password = $oxid::params::db_password, $config_key = $oxid::params::config_key) {    
     $module_path = get_module_path('oxid')
     

@@ -58,6 +58,7 @@ class oxid::mysql::server($user = "root", $password, $config_content = undef) {
     
     exec { "mysql-execFile-${host}-${myfile}":
       command => "mysql -P ${port} -h ${host} -u${user} -p${password} ${db} < ${$myfile}",
+      onlyif => "test -f ${myfile}",
       path => "/usr/bin:/usr/sbin:/bin"
     }
   }

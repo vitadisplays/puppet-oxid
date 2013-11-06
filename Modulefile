@@ -1,5 +1,5 @@
 name 'vitadisplays-oxid'
-version '0.0.1'
+version '0.0.1-SNAPSHOT'
 
 author 'Matthias Krause'
 license ''
