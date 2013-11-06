@@ -597,18 +597,28 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
       ensure => 'present',
       mode => "ug+rw",
       require => Exec["oxid-check-root-dir"]
-    }  
+    } -> 
 
     file { "${shop_dir}/setup":
       ensure => 'absent',
       force => true
-    }
+    } ->
     
     file { "${shop_dir}/updateApp":
       ensure => 'absent',
       force => true
-    }
-     
+    } ->
+    
+    exec { "oxid-check-compile-dir": 
+      command => "chown -R ${owner}:${group} ${compile_dir} & chmod -R ug+rw ${compile_dir}", 
+      path => "/usr/bin:/usr/sbin:/bin"
+    } ->
+    
+    exec { "oxid-clean":
+        command => "rm -r -f ${compile_dir}/*",
+        path   => "/usr/bin:/usr/sbin:/bin"
+    } ->
+    
     /*exec { "oxid-check-root-dir": 
       command => "chown -R ${owner}:${group} ${shop_dir} & chmod -R ug+rw ${shop_dir}", 
       path => "/usr/bin:/usr/sbin:/bin"
@@ -646,9 +656,9 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
       path => "/usr/bin:/usr/sbin:/bin"
     } ->*/
      
-	  /*exec {"oxid-updateviews-${configurations['sShopDir']}":
+	  exec {"oxid-updateviews-$shop_dir}":
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
-        command => "php -r 'function getShopBasePath() { return \"${configurations['sShopDir']}/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'"
-        
-  }*/
+        command => "php -r 'function getShopBasePath() { return \"$shop_dir/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'"
+       
+  }
 }
