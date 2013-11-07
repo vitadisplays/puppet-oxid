@@ -216,6 +216,12 @@ class oxid(
               destPath => $dest_dir,
               timeout => $timeout}
       }
+            
+      /^(file*:)(\/\/)*(.*)$/ : {
+          exec { "cp -f -r $3 $dest_dir":
+              path   => "/usr/bin:/usr/sbin:/bin"
+          }
+      }
       default : { fail("${name} not recordnized.")}     
     } 
   }
@@ -252,6 +258,21 @@ class oxid(
         }
       }
       
+
+      /^(file):(\/\/)*(.*\.sql)$/ : {  
+        exec { "mysql import file $3":
+          command => "mysql -h ${host} -u${mysql_user} -p${mysql_password} ${db} < $3",
+          path   => "/usr/bin:/usr/sbin:/bin"
+        }
+      }      
+      
+      /(.*\.sql)$/ : {  
+        exec { "mysql import file $1":
+          command => "mysql -h ${host} -u${mysql_user} -p${mysql_password} ${db} < $1",
+          path   => "/usr/bin:/usr/sbin:/bin"
+        }
+      } 
+        
       default : { fail("${name} not recordnized.")} 
     }    
   }
