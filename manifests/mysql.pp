@@ -36,9 +36,9 @@ class oxid::mysql::server($user = "root", $password, $config_content = undef) {
     $real_grant_password = $grant_user ? { undef => $password, default => $grant_password }
     
     exec { "mysql-create-${host}-${db}-db":
-      unless  => "mysql -h ${host} -uroot -p${password} ${db}",
+      unless  => "mysql -h ${host} -u${user} -p${password} ${db}",
       path    => ["/bin", "/usr/bin"],
-      command => "mysql -h ${host} -uroot -p${password} -e \"create database ${db}; grant all on ${db}.* to ${real_grant_user}@localhost identified by '${real_grant_password}';FLUSH PRIVILEGES;\"",
+      command => "mysql -h ${host} -u${user} -p${password} -e \"create database ${db}; grant all on ${db}.* to ${real_grant_user}@localhost identified by '${real_grant_password}';FLUSH PRIVILEGES;\"",
     }
   }
   
@@ -49,7 +49,7 @@ class oxid::mysql::server($user = "root", $password, $config_content = undef) {
     }
   }
   
-  define execFile ($db, $host = "localhost", $port = 3306,  $user, $password, $sql_file = undef) {
+  define execFile ($db, $host = "localhost", $port = 3306,  $user, $password, $sql_file = undef, $unless = undef) {
     if $sql_file != undef {
       $myfile = $sql_file
     } else {
@@ -59,11 +59,12 @@ class oxid::mysql::server($user = "root", $password, $config_content = undef) {
     exec { "mysql-execFile-${host}-${myfile}":
       command => "mysql -P ${port} -h ${host} -u${user} -p${password} ${db} < ${$myfile}",
       onlyif => "test -f ${myfile}",
-      path => "/usr/bin:/usr/sbin:/bin"
+      path => "/usr/bin:/usr/sbin:/bin",
+      unless => $unless
     }
   }
   
-  define execSQL ($db, $host = "localhost", $user, $password, $query = undef) {
+  define execSQL ($db, $host = "localhost", $user, $password, $query = undef, $unless = undef) {
     $myquery = $name
     
     if $query != undef {
@@ -72,7 +73,8 @@ class oxid::mysql::server($user = "root", $password, $config_content = undef) {
     
     exec { "mysql-execSQL-${host}-${myquery}":
       command => "mysql -h ${host} -u${user} -p${password} ${db} -e \"${myquery}\"",
-      path => "/usr/bin:/usr/sbin:/bin"
+      path => "/usr/bin:/usr/sbin:/bin",
+      unless => $unless
     }
   }
 }

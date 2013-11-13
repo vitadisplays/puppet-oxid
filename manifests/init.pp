@@ -34,33 +34,27 @@ class oxid(
     db_password     => $configurations['dbPwd'],
     utf8            => $configurations['iUtfMode'],
     mysql_user => $configurations['mysql_user'],
-    mysql_password => $configurations['mysql_password']    
+    mysql_password => $configurations['mysql_password'],
+    config_content => $config_content,
+    htaccess_content => $htaccess_content 
   }
   
-  file { "${configurations['sShopDir']}/config.inc.php":
-      ensure => 'present',
-      mode => "0444",
-      content => $config_content,
-      require => Oxid::Install["oxid-base-install"],
-      notify => Exec["force-reload-httpd-server"]
-  } 
-  
-  if $htaccess_content != undef {
+
+      
+  /*if $htaccess_content != undef {
 	  file { "${configurations['sShopDir']}/.htaccess":
 	      ensure => 'present',
 	      mode => "0444",
 	      content => $htaccess_content,
-      require => Oxid::Install["oxid-base-install"],
-      notify => Exec["force-reload-httpd-server"]
+        notify => Exec["force-reload-httpd-server"]
 	  }
   } else {
     file { "${configurations['sShopDir']}/.htaccess":
         ensure => 'present',
         mode => "0444",
-      require => Oxid::Install["oxid-base-install"],
-      notify => Exec["force-reload-httpd-server"]
+        notify => Exec["force-reload-httpd-server"]
     }
-  } 
+  }*/ 
 
   class {
     oxid::lastcheck: 
@@ -78,59 +72,93 @@ class oxid(
     $db_name,
     $db_user,
     $db_password,
-    $utf8  = '0'
+    $utf8  = '0',
+    $config_content,
+    $htaccess_content = undef,
+    $force = false
     ) {
     
-    exec { "oxid-delete-dir":
+    $_exists = inline_template("<%= File.exists?('$shop_dir') %>")
+    
+    /*exec { "oxid-delete-dir":
       command => "rm -r ${shop_dir}",
       path    => "/usr/bin:/usr/sbin:/bin",
       onlyif  => "test -d ${shop_dir}"
-    } ->
-     
-    exec { "oxid-dir":
-      command => "mkdir -p ${shop_dir}",
-      path    => "/usr/bin:/usr/sbin:/bin",
-      require => Exec["oxid-delete-dir"]
-    } ->
+    } ->*/
     
-    oxid::unpack{$source: destPath => $shop_dir } ->
+    if ($_exists != "true" or $force == true) {
+	    exec { "oxid-dir":
+	      command => "mkdir -p ${shop_dir}",
+	      path    => "/usr/bin:/usr/sbin:/bin"
+	    } ->
+	    
+	    oxid::unpack{$source: destPath => $shop_dir} ->   
     
-    mysql::server::dropdb { "oxid-drop-${db_name}":
-      host     => $db_host,
-      db       => $db_name,
-      user     => $mysql_user,
-      password => $mysql_password
-    } ->
-    
-    mysql::server::createdb { "oxid-create-${db_name}":
-      host     => $db_host,
-      db       => $db_name,
-      user     => $mysql_user,
-      password => $mysql_password,
-      grant_user     => $db_user,
-      grant_password => $db_password
-    } ->
-    
-    mysql::server::execFile { "oxid-import-base-${db_name}":
-      host     => $db_host,
-      db       => $db_name,
-      user     => $db_user,
-      password => $db_password,
-      sql_file     => "${shop_dir}/setup/sql/database.sql"
-    }
-  
-    if $utf8 == '1' {
-      mysql::server::execFile { "oxid-utf8-${db_name}":
-        db       => $db_name,
-        user     => $db_user,
-        password => $db_password,
-        sql_file => "${shop_dir}/setup/sql/latin1_to_utf8.sql",
-        require  => Mysql::Server::ExecFile ["oxid-import-base-${db_name}"]
-      }
-    }    
+	    mysql::server::dropdb { "oxid-drop-${db_name}":
+	      host     => $db_host,
+	      db       => $db_name,
+	      user     => $mysql_user,
+	      password => $mysql_password
+	    } ->
+	    
+	    mysql::server::createdb { "oxid-create-${db_name}":
+	      host     => $db_host,
+	      db       => $db_name,
+	      user     => $mysql_user,
+	      password => $mysql_password,
+	      grant_user     => $db_user,
+	      grant_password => $db_password
+	    } ->
+	    
+	    mysql::server::execFile { "oxid-import-base-${db_name}":
+	      host     => $db_host,
+	      db       => $db_name,
+	      user     => $db_user,
+	      password => $db_password,
+	      sql_file     => "${shop_dir}/setup/sql/database.sql"
+	    } ->
+	  
+		  file { "${shop_dir}/config.inc.php":
+		      ensure => 'present',
+		      mode => "0444",
+		      content => $config_content,
+		      notify => Exec["force-reload-httpd-server"]
+		  } ->
+		  
+		  file { "${shop_dir}/.htaccess":
+		        ensure => 'present',
+		        mode => "0444",
+		        content => $htaccess_content,
+		        notify => Exec["force-reload-httpd-server"]
+		  }
+  	  
+	    if $utf8 == '1' {
+	      mysql::server::execFile { "oxid-utf8-${db_name}":
+	        db       => $db_name,
+	        user     => $db_user,
+	        password => $db_password,
+	        sql_file => "${shop_dir}/setup/sql/latin1_to_utf8.sql",
+	        require  => Mysql::Server::ExecFile ["oxid-import-base-${db_name}"]
+	      }
+	    }
+     } else {
+      file { "${shop_dir}/config.inc.php":
+          ensure => 'present',
+          mode => "0444",
+          content => $config_content,
+          notify => Exec["force-reload-httpd-server"]
+      } ->
+      
+      file { "${shop_dir}/.htaccess":
+            ensure => 'present',
+            mode => "0444",
+            content => $htaccess_content,
+            notify => Exec["force-reload-httpd-server"]
+       }
+     } 
   }
   
-  define importData ($dest_dir, $tmp_dir = undef, $options = undef, $timeout = 18000) {      
+  define importData ($dest_dir, $tmp_dir = undef, $options = undef, $timeout = 18000, $unless = undef) {      
     case $name {     
       /^(https*:)(\/\/)*(.*\.tar\.gz|.*\.zip|.*\.gz|.*\.phar)$/ : {
           if $tmp_dir != undef {
@@ -147,19 +175,22 @@ class oxid(
 	        exec { "wget ${name}":
 			      command => "wget ${name} -O ${real_output_file}",
 			      path   => "/usr/bin:/usr/sbin:/bin",
+			      unless => $unless,
 			      timeout => $timeout			      
 			    } ->
 			    
 			    unpack{$real_output_file : 
 			        destPath => $dest_dir, 
 			        timeout => $timeout,
-              require => Exec["wget ${name}"]
+              require => Exec["wget ${name}"],
+              unless => $unless
           }
 			    
 			    if $tmp_dir == undef {
 				    exec { "${name}-remove-tmp-files":
 				        command => "rm -f -r ${real_tmp_Dir}",
 				        path   => "/usr/bin:/usr/sbin:/bin",
+				        unless => $unless,
                 require => Unpack[$real_output_file]                
             }			    
 				  }    
@@ -195,17 +226,20 @@ class oxid(
           command => "$command .",
           path   => "/usr/bin:/usr/sbin:/bin",
           cwd    => $real_output_dir,
-          timeout => $timeout 
+          unless => $unless,
+          timeout => $timeout
         }
         
         if $name =~ /.*(\.tar\.gz|\.zip|\.phar$)/ and $tmp_dir == undef {
           unpack{$real_output_file : 
               destPath => $dest_dir,
               timeout => $timeout,
-              require => Exec["scp ${name}"]} ->
+              require => Exec["scp ${name}"], 
+              unless => $unless} ->
           
           exec { "${name}-remove-tmp-files":
               command => "rm -f -r ${tmp_dir}",
+              unless => $unless,
               path   => "/usr/bin:/usr/sbin:/bin"
           }
         }        
@@ -214,11 +248,13 @@ class oxid(
       /^(file*:)(\/\/)*(.*\.tar\.gz|.*\.zip|.*\.gz|.*\.phar)$/ : {
         unpack{$3 : 
               destPath => $dest_dir,
+              unless => $unless,
               timeout => $timeout}
       }
             
       /^(file*:)(\/\/)*(.*)$/ : {
           exec { "cp -f -r $3 $dest_dir":
+              unless => $unless,
               path   => "/usr/bin:/usr/sbin:/bin"
           }
       }
@@ -226,20 +262,22 @@ class oxid(
     } 
   }
   
-  define importSQL ($host = "localhost", $db = $oxid::params::db_name, $mysql_user = $oxid::params::db_user, $mysql_password = $oxid::params::db_password, $options = undef, $dump_options = "--add-drop-table --allow-keywords --skip-extended-insert --hex-blob --default-character-set=latin1") {
+  define importSQL ($host = "localhost", $db = $oxid::params::db_name, $mysql_user = $oxid::params::db_user, $mysql_password = $oxid::params::db_password, $options = undef, $dump_options = "--add-drop-table --allow-keywords --skip-extended-insert --hex-blob --default-character-set=latin1", $unless = undef) {
     case $name {
       /^(https*|scp|file):(\/\/)*(.*\.tar\.gz|.*\.zip|.*\.gz|.*\.phar)$/ : {
         $tmp_dir = inline_template('<%= Dir.mktmpdir %>')        
         
-        importData{$name: dest_dir => $tmp_dir, tmp_dir => $tmp_dir, options => $options} ->
+        importData{$name: dest_dir => $tmp_dir, tmp_dir => $tmp_dir, options => $options, unless => $unless} ->
         
         exec { "mysql import file ${name}":
 		      command => "sh -c 'for file in ${tmp_dir}/*.sql; do mysql -h ${host} -u${mysql_user} -p${mysql_password} ${db} < \$file ; done'",
+		      unless => $unless,
 		      path   => "/usr/bin:/usr/sbin:/bin"
 		    } ->
 		    
 		    exec { "${name}-remove-sql-tmp-files":
               command => "rm -f -r ${tmp_dir}",
+              unless => $unless,
               path   => "/usr/bin:/usr/sbin:/bin"
           }
       }
@@ -254,7 +292,8 @@ class oxid(
         $command = "ssh ${option_str} '$1' mysqldump ${dump_options} -u '$3' --password='$4' '$2' | mysql -u '${mysql_user}' --password='${mysql_password}' -D '${db}'"
           
         exec { $command:
-          path   => "/usr/bin:/usr/sbin:/bin"
+          path   => "/usr/bin:/usr/sbin:/bin",
+          unless => $unless
         }
       }
       
@@ -262,6 +301,7 @@ class oxid(
       /^(file):(\/\/)*(.*\.sql)$/ : {  
         exec { "mysql import file $3":
           command => "mysql -h ${host} -u${mysql_user} -p${mysql_password} ${db} < $3",
+          unless => $unless,
           path   => "/usr/bin:/usr/sbin:/bin"
         }
       }      
@@ -269,6 +309,7 @@ class oxid(
       /(.*\.sql)$/ : {  
         exec { "mysql import file $1":
           command => "mysql -h ${host} -u${mysql_user} -p${mysql_password} ${db} < $1",
+          unless => $unless,
           path   => "/usr/bin:/usr/sbin:/bin"
         }
       } 
@@ -277,7 +318,7 @@ class oxid(
     }    
   }
   
-  define unpack($destPath, $timeout = 0) {
+  define unpack($destPath, $timeout = 0, $unless = undef) {
     $module_path = get_module_path('oxid')
       
     case $name {
@@ -285,22 +326,23 @@ class oxid(
                     exec { "unphar ${name}":
                       command => "php -f ${module_path}/functions/oxid/phar-extract.php '$1' '${destDir}'", 
                       path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
-                      timeout => $timeout 
+                      unless => $unless,
+                      timeout => $timeout
                     }
                   }
       /^(.*\.zip$)/ : {                    
                     exec { "unzip ${name}":
-                      command => "unzip -o --qq '$1'",
-                      cwd => $destPath,
+                      command => "unzip -d '${destPath}' -o --qq '$1'",
                       path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+                      unless => $unless,
                       timeout => $timeout
                     }
                   }                 
       /^(.*\.tar.gz$)/ : {                    
                     exec { "untar/gz ${name}":
-                      command => "tar -zxf '$1'",
-                      cwd => $destPath,
+                      command => "tar -C '${destPath}' -zxf '$1'",
                       path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+                      unless => $unless,
                       timeout => $timeout
                     }
                   } 
@@ -309,6 +351,7 @@ class oxid(
                     exec { "gunzip ${name}":                      
                       command => "gunzip -c '$1' > '${$destPath}/${filename}'",
                       path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+                      unless => $unless,
                       timeout => $timeout
                     }
                   }                                                      
@@ -586,10 +629,10 @@ class oxid(
 }
 
 class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "www-data") {
-    exec { "oxid-check-root-dir": 
+    exec { "oxid-check-owner ${shop_dir}": 
       command => "chown -R ${owner}:${group} ${shop_dir} & chmod -R ug+rw ${shop_dir}", 
       path => "/usr/bin:/usr/sbin:/bin"
-    }
+    } ->
      
     /*file { "oxid-check-root-dir":
       path => "${shop_dir}",
@@ -616,8 +659,7 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
     
     file { "${shop_dir}/tmp":
       ensure => 'present',
-      mode => "ug+rw",
-      require => Exec["oxid-check-root-dir"]
+      mode => "ug+rw"
     } -> 
 
     file { "${shop_dir}/setup":
@@ -630,13 +672,12 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
       force => true
     } ->
     
-    exec { "oxid-check-compile-dir": 
+    exec { "oxid-check-owner ${compile_dir}": 
       command => "chown -R ${owner}:${group} ${compile_dir} & chmod -R ug+rw ${compile_dir}", 
       path => "/usr/bin:/usr/sbin:/bin"
     } ->
     
-    exec { "oxid-clean":
-        command => "rm -r -f ${compile_dir}/*",
+    exec { "rm -r -f ${compile_dir}/*":
         path   => "/usr/bin:/usr/sbin:/bin"
     } ->
     
@@ -680,6 +721,5 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
 	  exec {"oxid-updateviews-$shop_dir}":
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
         command => "php -r 'function getShopBasePath() { return \"$shop_dir/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'"
-       
-  }
+    }
 }
