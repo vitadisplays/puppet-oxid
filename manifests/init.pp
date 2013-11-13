@@ -38,7 +38,7 @@ class oxid(
     mysql_password => $configurations['mysql_password'],
     config_content => $config_content,
     htaccess_content => $htaccess_content,
-    force = $force 
+    force => $force 
   }
 
   class {
