@@ -15,7 +15,8 @@ class oxid(
     $source,    
     $configurations,
     $config_content,
-    $htaccess_content = undef
+    $htaccess_content = undef,
+    $force = false
     ) {    
   
   /*$config_keys = keys($configurations)*/
@@ -36,25 +37,9 @@ class oxid(
     mysql_user => $configurations['mysql_user'],
     mysql_password => $configurations['mysql_password'],
     config_content => $config_content,
-    htaccess_content => $htaccess_content 
+    htaccess_content => $htaccess_content,
+    force = $force 
   }
-  
-
-      
-  /*if $htaccess_content != undef {
-	  file { "${configurations['sShopDir']}/.htaccess":
-	      ensure => 'present',
-	      mode => "0444",
-	      content => $htaccess_content,
-        notify => Exec["force-reload-httpd-server"]
-	  }
-  } else {
-    file { "${configurations['sShopDir']}/.htaccess":
-        ensure => 'present',
-        mode => "0444",
-        notify => Exec["force-reload-httpd-server"]
-    }
-  }*/ 
 
   class {
     oxid::lastcheck: 
