@@ -355,23 +355,21 @@ class oxid(
     
     $exist = inline_template('<%= File.exists?(File.join(@tmp_dir, "copy_this")) %>')
     
-    if($exist) {
-      exec { "cp -R -f copy_this/* ${shop_dir}": 
+    if($exist == "true") {
+      exec { "cp -R -f ${tmp_dir}/copy_this/* ${shop_dir}": 
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
-        cwd     => $tmp_dir,
-        before => Exec["rm -r -f * ${tmp_dir}"],
+        before => Exec["rm -r -f ${tmp_dir}"],
         require => Unpack[$name]     
       }
     } else {
-      exec { "cp -R -f * ${shop_dir}": 
+      exec { "cp -R -f ${tmp_dir}/* ${shop_dir}": 
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
-        cwd     => $tmp_dir,
-        before => Exec["rm -r -f * ${tmp_dir}"],
+        before => Exec["rm -r -f ${tmp_dir}"],
         require => Unpack[$name]       
       }
     }
     
-    if($sql_scripts != undef) {
+    /*if($sql_scripts != undef) {
          $sql_files = split(inline_template("<%= @sql_scripts.each {|f| File.join(@tmp_dir, f) }.join(',') %>"), ',')
          
          oxid::mysql::server::execFile{$sql_files:       
@@ -382,9 +380,9 @@ class oxid(
 		        password => $password,
 		        before => Exec["rm -r -f * ${tmp_dir}"]
 	      }
-    }
+    }*/
     
-    exec { "rm -r -f * ${tmp_dir}": 
+    exec { "rm -r -f ${tmp_dir}": 
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin"     
     }
   }
@@ -614,6 +612,16 @@ class oxid(
 }
 
 class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "www-data") {
+    $module_path = get_module_path('oxid')
+    $_exists = inline_template("<%= File.exists?('${shop_dir}/bin/cron.php') %>")
+    if ($_exists == "true") {
+        $updateview_template = "$module_path/templates/oxid/updateviews-5.php.erb"
+        /*$updateview_command= "php -r 'if ( !function_exists( \"isAdmin\" )) { function isAdmin() { return true; } } function getShopBasePath() { return \"$shop_dir/\"; } require_once getShopBasePath() . \"modules/functions.php\"; require_once getShopBasePath() . \"core/oxfunctions.php\"; require_once getShopBasePath() . \"core/oxdb.php\"; \$myConfig = oxRegistry::getConfig(); oxDb::getInstance()->updateViews(); \$myConfig->pageClose();'"*/
+    } else {
+        $updateview_template = "$module_path/templates/oxid/updateviews-448.php.erb"
+        /*$updateview_command = "php -r 'if ( !function_exists( \"isAdmin\" )) { function isAdmin() { return true; } } function getShopBasePath() { return \"$shop_dir/\"; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'"*/
+    }
+    
     exec { "oxid-check-owner ${shop_dir}": 
       command => "chown -R ${owner}:${group} ${shop_dir} & chmod -R ug+rw ${shop_dir}", 
       path => "/usr/bin:/usr/sbin:/bin"
@@ -662,9 +670,7 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
       path => "/usr/bin:/usr/sbin:/bin"
     } ->
     
-    exec { "rm -r -f ${compile_dir}/*":
-        path   => "/usr/bin:/usr/sbin:/bin"
-    } ->
+     
     
     /*exec { "oxid-check-root-dir": 
       command => "chown -R ${owner}:${group} ${shop_dir} & chmod -R ug+rw ${shop_dir}", 
@@ -703,8 +709,25 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
       path => "/usr/bin:/usr/sbin:/bin"
     } ->*/
      
-	  exec {"oxid-updateviews-$shop_dir}":
+	  /*exec {"oxid-updateviews-$shop_dir}":
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
         command => "php -r 'function getShopBasePath() { return \"$shop_dir/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'"
+    }*/   
+    
+    file { "${compile_dir}/_updateview.php":
+            ensure => 'present',
+            mode => "0755",
+            owner => $owner,
+            group => $group,
+            content => template($updateview_template)
+    } ->
+      
+    exec {"oxid-updateviews-$shop_dir}":
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+        command => "php -f '${compile_dir}/_updateview.php'"
+    } ->
+    
+    exec { "rm -r -f ${compile_dir}/*":
+        path   => "/usr/bin:/usr/sbin:/bin"
     }
 }
