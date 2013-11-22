@@ -667,14 +667,20 @@ class oxid::lastcheck($configurations, $owner = "www-data", $group = "www-data")
         command => "wget --spider --no-check-certificate ${$url}"
     } ->
     
+    /* Excute start_updateviews.php several times to really do the action */
     exec {"oxid-updateviews-${shop_dir}":
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
-        command => "wget --spider --no-check-certificate http://localhost/start_updateviews.php"
+        command => "wget --spider --no-check-certificate ${$url}/start_updateviews.php"
     } ->
     
     exec {"oxid-updateviews-${shop_dir}2":
         path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
-        command => "wget --spider --no-check-certificate http://localhost/start_updateviews.php"
+        command => "wget --spider --no-check-certificate ${$url}/start_updateviews.php"
+    } ->
+    
+    exec {"oxid-updateviews-${shop_dir}3":
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+        command => "wget --spider --no-check-certificate ${$url}/start_updateviews.php"
     } ->
     
     exec { "rm -f ${shop_dir}/start_updateviews.php":
