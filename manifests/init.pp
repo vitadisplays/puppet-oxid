@@ -43,8 +43,7 @@ class oxid(
 
   class {
     oxid::lastcheck: 
-    shop_dir => $configurations['sShopDir'], 
-    compile_dir => $configurations['sCompileDir'],
+    configurations => $configurations,
     stage => last;    
   }
   
@@ -611,44 +610,25 @@ class oxid(
   } 
 }
 
-class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "www-data") {
+class oxid::lastcheck($configurations, $owner = "www-data", $group = "www-data") {
     $module_path = get_module_path('oxid')
-    $_exists = inline_template("<%= File.exists?('${shop_dir}/bin/cron.php') %>")
-    if ($_exists == "true") {
-        $updateview_template = "$module_path/templates/oxid/updateviews-5.php.erb"
-        /*$updateview_command= "php -r 'if ( !function_exists( \"isAdmin\" )) { function isAdmin() { return true; } } function getShopBasePath() { return \"$shop_dir/\"; } require_once getShopBasePath() . \"modules/functions.php\"; require_once getShopBasePath() . \"core/oxfunctions.php\"; require_once getShopBasePath() . \"core/oxdb.php\"; \$myConfig = oxRegistry::getConfig(); oxDb::getInstance()->updateViews(); \$myConfig->pageClose();'"*/
-    } else {
-        $updateview_template = "$module_path/templates/oxid/updateviews-448.php.erb"
-        /*$updateview_command = "php -r 'if ( !function_exists( \"isAdmin\" )) { function isAdmin() { return true; } } function getShopBasePath() { return \"$shop_dir/\"; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'"*/
+    $shop_dir = $configurations['sShopDir']
+    $compile_dir = $configurations['sCompileDir']
+    $url = $configurations['sShopURL']
+    $admin_url = $configurations['sAdminSSLURL'] ? { 
+        undef => "${url}/admin", 
+        default => $configurations['sAdminSSLURL']
     }
     
     exec { "oxid-check-owner ${shop_dir}": 
-      command => "chown -R ${owner}:${group} ${shop_dir} & chmod -R ug+rw ${shop_dir}", 
+      command => "chown -R ${owner}:${group} '${shop_dir}' & chmod -R ug+rw '${shop_dir}'", 
       path => "/usr/bin:/usr/sbin:/bin"
     } ->
-     
-    /*file { "oxid-check-root-dir":
-      path => "${shop_dir}",
-      ensure => 'present',
-      mode => "+ug+rw",
-      owner => $owner,
-      group => $group,
-      recurselimit => 0
-    }
     
-    file { "oxid-check-oxid-config":
-      path => "${shop_dir}/config.inc.php",
-      ensure => 'present',
-      mode => "0444",
-      require => Exec["oxid-check-root-dir"]
-    }
-    
-    file { "oxid-check-oxid-htaccess":
-      path => "${shop_dir}/.htaccess",
-      ensure => 'present',
-      mode => "0444",
-      require => Exec["oxid-check-root-dir"]
-    }*/
+    exec { "oxid-check-owner ${compile_dir}": 
+      command => "chown -R ${owner}:${group} '${compile_dir}' & chmod -R ug+rw '${compile_dir}'", 
+      path => "/usr/bin:/usr/sbin:/bin"
+    } ->
     
     file { "${shop_dir}/tmp":
       ensure => 'present',
@@ -665,69 +645,39 @@ class oxid::lastcheck($shop_dir, $compile_dir, $owner = "www-data", $group = "ww
       force => true
     } ->
     
-    exec { "oxid-check-owner ${compile_dir}": 
-      command => "chown -R ${owner}:${group} ${compile_dir} & chmod -R ug+rw ${compile_dir}", 
-      path => "/usr/bin:/usr/sbin:/bin"
-    } ->
-    
-     
-    
-    /*exec { "oxid-check-root-dir": 
-      command => "chown -R ${owner}:${group} ${shop_dir} & chmod -R ug+rw ${shop_dir}", 
-      path => "/usr/bin:/usr/sbin:/bin"
-    } ->
-    
-    exec { "oxid-check-oxid-config": 
-      command => "chown -R ${owner}:${group} ${shop_dir}/config.inc.php & chmod -R 0444 ${shop_dir}/config.inc.php", 
-      path => "/usr/bin:/usr/sbin:/bin"
-    } ->
-    
-    exec { "oxid-check-oxid-htaccess": 
-      command => "chown -R ${owner}:${group} ${shop_dir}/.htaccess & chmod -R 0444 ${shop_dir}/.htaccess", 
-      path => "/usr/bin:/usr/sbin:/bin"
-    } ->
-    
-    exec { "oxid-check-compile-dir": 
-      command => "chown -R ${owner}:${group} ${compile_dir} & chmod -R ug+rw ${compile_dir}", 
-      path => "/usr/bin:/usr/sbin:/bin"
-    } ->
-    
-    exec { "oxid-clean":
-        command => "rm -r -f ${compile_dir}/*",
+    exec { "rm -r -f ${compile_dir}/*":
         path   => "/usr/bin:/usr/sbin:/bin"
     } ->
     
-    exec { "oxid-check-remove-setup": 
-      command => "rm -r -f ${shop_dir}/setup", 
-      onlyif => "test -d ${shop_dir}/setup",
-      path => "/usr/bin:/usr/sbin:/bin"
-    } ->
-    
-    exec { "oxid-check-remove-updatApp": 
-      command => "rm -r -f ${shop_dir}/updatApp", 
-      onlyif => "test -d ${shop_dir}/updatApp",
-      path => "/usr/bin:/usr/sbin:/bin"
-    } ->*/
-     
-	  /*exec {"oxid-updateviews-$shop_dir}":
-        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
-        command => "php -r 'function getShopBasePath() { return \"$shop_dir/\"; } function isAdmin() { return true; } require_once getShopBasePath().\"core/oxfunctions.php\"; require_once getShopBasePath().\"core/oxsupercfg.php\"; require_once getShopBasePath().\"core/oxdb.php\"; oxDb::getInstance()->updateViews(); exit(0);'"
-    }*/   
-    
-    file { "${compile_dir}/_updateview.php":
+    file { "${shop_dir}/start_updateviews.php":
             ensure => 'present',
             mode => "0755",
             owner => $owner,
             group => $group,
-            content => template($updateview_template)
-    } ->
-      
-    exec {"oxid-updateviews-$shop_dir}":
-        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
-        command => "php -f '${compile_dir}/_updateview.php'"
+            source => "$module_path/files/oxid/updateviews-all.php"
     } ->
     
-    exec { "rm -r -f ${compile_dir}/*":
+    exec {"oxid-check-admin-url-${shop_dir}":
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+        command => "wget --spider --no-check-certificate ${admin_url}"
+    } ->
+    
+    exec {"oxid-check-shop-url-${shop_dir}":
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+        command => "wget --spider --no-check-certificate ${$url}"
+    } ->
+    
+    exec {"oxid-updateviews-${shop_dir}":
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+        command => "wget --spider --no-check-certificate http://localhost/start_updateviews.php"
+    } ->
+    
+    exec {"oxid-updateviews-${shop_dir}2":
+        path    => "/usr/bin:/usr/sbin:/bin:/usr/local/zend/bin",
+        command => "wget --spider --no-check-certificate http://localhost/start_updateviews.php"
+    } ->
+    
+    exec { "rm -f ${shop_dir}/start_updateviews.php":
         path   => "/usr/bin:/usr/sbin:/bin"
-    }
+    }    
 }
