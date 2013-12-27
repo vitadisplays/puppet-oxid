@@ -4,7 +4,8 @@ define oxid::mysql::createdb (
   $port    = $oxid::mysql::params::default_port,
   $user    = $oxid::mysql::params::default_user,
   $password,
-  $charset = $oxid::mysql::params::default_db_charset) {
+  $charset = $oxid::mysql::params::default_db_charset) {  
+
   if !defined(Class[::mysql::client]) {
     include ::mysql::client
   }

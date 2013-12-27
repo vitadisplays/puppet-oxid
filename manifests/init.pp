@@ -50,7 +50,8 @@ class oxid (
   $sql_charset         = $oxid::params::default_charset) inherits ::oxid::params {
   include 'stdlib'
   include ::oxid::apache::params
-
+  include oxid::mysql::params
+  
   if defined(Class['mysql::server']) {
     Class['mysql::server'] -> Oxid::Mysql::Dropdb["${name}: drop database"]
   }

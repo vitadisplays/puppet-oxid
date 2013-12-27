@@ -34,6 +34,9 @@ define oxid::update (
   $fail_on_error    = true,
   $updateViews      = true,
   $timeout          = 900) {
+  include 'stdlib'
+  include ::oxid::apache::params
+  include oxid::mysql::params
   validate_re($copy_this, ['^before$', '^after$', '^never$'], "Only before, after or never for copy_this parameter are supported.")
   validate_re($changed_full, ['^before$', '^after$', '^never$'], "Only before, after or never for changed_full parameter are supported."
   )
