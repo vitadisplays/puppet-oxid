@@ -1,59 +1,73 @@
-/*class oxid::php::params {
-  $config = "/etc/php53/apache2/php.ini"
-}*/
-
-class oxid::mysql::params {
-  $server_package_name = "mysql-server"
-  $packages = [$server_package_name, "mysqltuner"]
-}
-
 class oxid::params {
+  $shop_dir = "/srv/www/oxid"
+  $compile_dir = "${shop_dir}/tmp"
+
+  $shop_url = "http://${hostname}"
+  
+  $shop_ssl_url = undef
+  $admin_ssl_url = undef
+  
+  $db_type = "mysql"
   $db_host = "localhost"
-  $db_port = 3361
+  $db_port = 3306
   $db_name = "oxid"
   $db_user = "oxid"
   $db_password = "oxid"
 
+  $default_charset = "latin1"
+  
+  $utf8_mode = 0
+
+  $rewrite_base = "/"
+
+  $mysql_user = "root"
+  $mysql_password = ""
+
+  $default_shopid = 1
   $config_key = 'fq45QS09_fqyx09239QQ'
-}
 
-class oxid::apache2::params {
-  $user = "www-data"
-  $group = "www-data"
-  $packages = ['php5', 'php5-dev', 'php5-gd', 'php-apc', 'php-pear', 'php5-common', 'php5-mysql', 'php5-curl', 'php5-memcache', 'libapache2-mod-php5']
-  $sites_path = "/etc/apache2/sites"
-  $mods_path = "/etc/apache2/mods"
-}
+  
+  $apache_mods = ['vhost_alias', 'php5', 'rewrite', 'headers']
 
-class oxid::zend_server::params inherits oxid::apache2::params {
- $user = "www-data"
- $group = "www-data"
- $packages = [
-    'php-5.3-dev-zend-server',
-    'php-5.3-mssql-zend-server',
-    'php-5.3-pdo-mysql-zend-server',
-    'php-5.3-curl-zend-server',
-    'php-5.3-gd-zend-server',
-    'php-5.3-imagick-zend-server',
-    'php-5.3-bcmath-zend-server',
-    'php-5.3-mbstring-zend-server',
-    'php-5.3-mcrypt-zend-server',
-    'php-5.3-apc-zend-server',
-    'php-5.3-memcache-zend-server',
-    'php-5.3-xmlrpc-zend-server',
-    'libapache2-mod-php-5.3-zend-server']
-  $sites_path = "/etc/apache2/sites"
-  $mods_path = "/etc/apache2/mods"
-}
+  $packages = ['shtool', 'ssl-cert', 'uuid-dev']
 
-class oxid::common::params {
-  $tmp_dir = "/tmp"
-  $packages = [	   
-	  'gzip', 
-	  'zip',
-	  'unzip',
-	  'mysql-client',
-	  'expect','shtool',
-    'ssl-cert',
-    'uuid-dev']
+  $tmp_dir = "/tmp/oxid"
+
+  $path = "/usr/bin:/usr/sbin:/bin"
+
+  $default_remote_dump_options_latin1 = [
+    "--single-transaction",
+    "--add-drop-table",
+    "--allow-keywords",
+    "--skip-extended-insert",
+    "--hex-blob",
+    "--default-character-set=latin1"]
+
+  $default_remote_dump_options_utf8 = [
+    "--single-transaction",
+    "--add-drop-table",
+    "--allow-keywords",
+    "--skip-extended-insert",
+    "--hex-blob",
+    "--default-character-set=utf8"]
+
+  $default_repository = 'none'
+  $zend_repository = 'zendguard'
+  $repository_configs = {
+    "${default_repository}" => {
+      'type'      => 'oxid::repository::file',
+      'directory' => ''
+    }
+    ,
+    "${zend_repository}"    => {
+      'type'       => 'oxid::repository::wget',
+      'directory'  => "${tmp_dir}/repository/${zend_repository}",
+      'url'        => 'http://downloads.zend.com/guard',
+      'timeout'    => 300,
+      'verbose'    => false,
+      'redownload' => false
+    }
+  }
+
+  $supported_archives = [".phar", ".zip", ".tar.gz", "tgz", ".gz", ".bz2"]
 }

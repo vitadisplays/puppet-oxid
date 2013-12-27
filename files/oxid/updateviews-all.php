@@ -17,7 +17,14 @@ if (file_exists(getShopBasePath().'bootstrap.php')) {
 	
 	$oMetaData = oxNew('oxDbMetaDataHandler');
 	
-	exit($oMetaData->updateViews() ? 0 : "Update Views(5) failed.");
+	$ret = true;
+	
+	for ($i = 0; $i < 4; $i++) {
+		if(!$oMetaData->updateViews()) {
+			$ret = false;
+		}
+	}
+	exit($ret ? 0 : "Update Views(5) failed.");
 } else {
 	if ( !function_exists( 'isAdmin' )) {
 		function isAdmin() { 

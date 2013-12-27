@@ -1,0 +1,77 @@
+<?php
+@set_time_limit(0);
+
+require_once dirname(__FILE__).'/core/initshop.php';
+
+require_once dirname(__FILE__).'/core/updateProcess.php';
+require_once dirname(__FILE__).'/ui/cli.php';
+
+/**
+ * Unattended CLI UI handler class
+ */
+class uiUnattendedCli extends uiCli
+{
+  protected $_answerResponses = array("<%= @answers.join('","') %>");
+  protected $_answerStep = 0;
+  
+    /**
+     * reads user input from stdin
+     *
+     * @return string
+     */
+    protected function _readUserInput()
+    {
+    return $this->_answerResponses[$this->_answerStep++];
+    }
+
+    /**
+     * repeat given answer and ask yes/no with Y default
+     * return null on "not sure" answer (any different than y/n or empty)
+     *
+     * @param string $sAnswer
+     *
+     * @return bool|null
+     */
+    protected function _readEnsurance($sAnswer)
+    {
+        return true;
+    }
+
+    /**
+     * print info for user
+     *
+     * @param IUserNotification $oInfo
+     * @param bool              $blPause
+     * @param bool              $blCopyMain
+     *
+     * @return null
+     */
+    public function addInfoForUser(IUserNotification $oInfo, $blPause = true, $blCopyMain = false)
+    {
+        $oInfo->display();
+    }
+
+    /**
+     * print error for user
+     *
+     * @param IUserNotification $oInfo
+     *
+     * @return null
+     */
+    public function addErrorForUser(IUserNotification $oInfo)
+    {
+        echo "\n================\n";
+        $oInfo->display();
+        
+        <%= @fail_on_error ? "exit(255);" : "" %>
+    }
+}
+
+$oProcess = new updateProcess(new uiUnattendedCli());
+while ($oProcess->runStep()) {
+    echo "\n-----\n";
+}
+
+echo "\ndone\n";
+
+exit(0);
