@@ -11,11 +11,15 @@ class oxid::php::zendguardloader (
     Class['apache::mod::php'] -> Oxid::Php::Zendguardloader <| |>
   }
   $downloads = {
-    "5.3-i386"   => "5.5.0/ZendGuardLoader-php-5.3-linux-glibc23-i386.tar.gz",
-    "5.3-x86_64" => "5.5.0/ZendGuardLoader-php-5.3-linux-glibc23-x86_64.tar.gz"
+    "5.2-i386"   => "optimizer/3.3.9/ZendOptimizer-3.3.9-linux-glibc23-i386.tar.gz",
+    "5.2-x86_64" => "optimizer/3.3.9/ZendOptimizer-3.3.9-linux-glibc23-x86_64.tar.gz",
+    "5.3-i386"   => "guard/5.5.0/ZendGuardLoader-php-5.3-linux-glibc23-i386.tar.gz",
+    "5.3-x86_64" => "guard/5.5.0/ZendGuardLoader-php-5.3-linux-glibc23-x86_64.tar.gz",
+    "5.4-i386"   => "guard/6.0.0/ZendGuardLoader-70429-PHP-5.4-linux-glibc23-i386.tar.gz",
+    "5.4-x86_64" => "guard/6.0.0/ZendGuardLoader-70429-PHP-5.4-linux-glibc23-x86_64.tar.gz"
   }
 
-  $supported_versions = ['5.3']
+  $supported_versions = ['5.2', '5.3', '5.4']
   $found = grep($supported_versions, $version)
 
   if count($found) == 0 {

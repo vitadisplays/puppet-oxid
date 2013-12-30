@@ -62,7 +62,7 @@ class oxid::params {
     "${zend_repository}"    => {
       'type'       => 'oxid::repository::wget',
       'directory'  => "${tmp_dir}/repository/${zend_repository}",
-      'url'        => 'http://downloads.zend.com/guard',
+      'url'        => 'http://downloads.zend.com',
       'timeout'    => 300,
       'verbose'    => false,
       'redownload' => false
