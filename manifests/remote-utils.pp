@@ -95,7 +95,7 @@ define oxid::sshFetchRemoteData (
       command => "rm -f -r '${archive}'",
       path    => $oxid::params::path,
       unless  => "test -e '${archive}'",
-      before  => Exec["${name} sshRemoteData mkdir -p '${real_import_dir}'"]
+      before  => Exec["${name} data mkdir -p '${real_import_dir}'"]
     }
   }
 
