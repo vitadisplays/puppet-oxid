@@ -146,6 +146,22 @@ define oxid::fileCheck (
     refreshonly => $refreshonly,
     require     => Exec["${name} file exist check ${shop_dir}/out/media"]
   }
+
+  exec { "${name} file exist check ${shop_dir}/out/downloads":
+    command     => "mkdir -p '${shop_dir}/out/downloads'",
+    path        => $oxid::params::path,
+    unless      => "test -d '${shop_dir}/out/downloads'",
+    refreshonly => $refreshonly,
+    require     => Exec["${name} file permissions check ${shop_dir}"]
+  }
+
+  exec { "${name} file permissions check ${shop_dir}/out/downloads":
+    command     => "chown -R '$owner':'$group' '${shop_dir}/out/downloads' && chmod -R ug+rw '${shop_dir}/out/downloads'",
+    path        => $oxid::params::path,
+    onlyif      => "test -d '${shop_dir}/out/downloads'",
+    refreshonly => $refreshonly,
+    require     => Exec["${name} file exist check ${shop_dir}/out/downloads"]
+  }
 }
 
 define oxid::updateViews ($shop_dir = $oxid::params::shop_dir, $refreshonly = false) {

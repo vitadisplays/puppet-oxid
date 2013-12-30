@@ -52,7 +52,7 @@ class oxid::params {
     "--default-character-set=utf8"]
 
   $default_repository = 'none'
-  $zend_repository = 'zendguard'
+  $zend_repository = 'zend'
   $repository_configs = {
     "${default_repository}" => {
       'type'      => 'oxid::repository::file',

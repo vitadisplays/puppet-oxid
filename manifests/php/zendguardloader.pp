@@ -2,14 +2,27 @@ class oxid::php::zendguardloader (
   $php_dir       = "/etc/php5/apache2/conf.d",
   $extension_dir = "/usr/local/zend/lib/php/extensions",
   $version       = "5.3",
-  $repository    = $oxid::params::zend_repository,
+  $repository    = 'zend',
   $zend_optimizer_optimization_level = 15,
   $zend_loader_license_path          = "",
   $zend_loader_disable_licensing     = 0,
   $ini_source    = undef) inherits oxid::apache::params {
+    
   if defined(Class['apache::mod::php']) {
     Class['apache::mod::php'] -> Oxid::Php::Zendguardloader <| |>
   }
+
+  /*if $version == undef {
+    exec { "php --version | grep -E -o 'PHP[ ]*([0-9]*\\.[0-9]*\\.[0-9]*)' | awk '{print \$2}' > '/tmp/php-short-version.txt'":
+      path   => $oxid::params::path,
+      before => Oxid::Repository::Get[$name]
+    }
+
+    $php_version = file('/tmp/php-short-version.txt')
+  } else {
+    $php_version = $version
+  }*/
+
   $downloads = {
     "5.2-i386"   => "optimizer/3.3.9/ZendOptimizer-3.3.9-linux-glibc23-i386.tar.gz",
     "5.2-x86_64" => "optimizer/3.3.9/ZendOptimizer-3.3.9-linux-glibc23-x86_64.tar.gz",

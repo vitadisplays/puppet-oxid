@@ -10,7 +10,7 @@ class oxid::php::install (
       include php::apt
     }
   }
-
+ 
   if !defined(Class[oxid::apt]) {
     include oxid::apt
   }

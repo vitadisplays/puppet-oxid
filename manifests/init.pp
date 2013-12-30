@@ -1,6 +1,7 @@
 import "utils.pp"
 import "config.pp"
 import "remote-utils.pp"
+import "php/zendguardloader.pp"
 
 # Class: vitadisplays_oxid
 #
