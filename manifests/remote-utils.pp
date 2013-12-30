@@ -239,7 +239,7 @@ define oxid::sshFetchRemoteSQL (
       command => "rm -f -r '${archive}'",
       path    => $oxid::params::path,
       unless  => "test -e '${archive}'",
-      before  => Exec["mkdir -p '${real_import_dir}'"]
+      before  => Exec["${name}: sql mkdir -p '${real_import_dir}'"]
     }
   }
 
