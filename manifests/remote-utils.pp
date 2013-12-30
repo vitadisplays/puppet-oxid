@@ -3,7 +3,7 @@ include oxid::params
 define oxid::sshFetchRemoteData (
   $shop_dir,
   $remote_dir,
-  $includes    = ["out/pictures"],
+  $includes    = ["out/pictures", "out/media", "out/downloads"],
   $proxy_dir   = undef,
   $ssh_options = [
     '-C',
