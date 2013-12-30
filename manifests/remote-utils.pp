@@ -1,5 +1,27 @@
 include oxid::params
 
+# Define: oxid::sshFetchRemoteData
+#
+# This define fetch remote data of an existing oxid instance.
+#
+# Parameters:
+#
+# Actions:
+#   - fetch data via ssh
+#   - Store content to an archive
+#
+# Requires:
+#   - Repository
+#   - Oxid instance
+#
+# Sample Usage:
+#    oxid::sshFetchRemoteData { "root@myremotehostname": 
+#     shop_dir => "/srv/www/oxid",
+#     remote_dir => "/srv/www/oxid",
+#     ssh_ident_content => file("path to private key"),
+#     compression => "bzip2",
+#     purge => true
+#    }  
 define oxid::sshFetchRemoteData (
   $shop_dir,
   $remote_dir,
@@ -108,6 +130,34 @@ define oxid::sshFetchRemoteData (
   }
 }
 
+# Define: oxid::sshFetchRemoteSQL
+#
+# This define fetch remote sql dump of an existing oxid database instance.
+#
+# Parameters:
+#
+# Actions:
+#   - fetch sql dump via ssh
+#   - Store content to an archive
+#
+# Requires:
+#   - Repository
+#   - Oxid instance
+#
+# Sample Usage:
+#  oxid::sshFetchRemoteSQL {"root@myremotehostname":
+#    db_name => "oxid",
+#    db_user => "oxid",
+#    db_password => "secret",
+#    ssh_ident_content => file("path to private key"),
+#    remote_db_name => "oxid",
+#    remote_db_user => "oxid",
+#    remote_db_password => "secret",
+#    dump_tables => ["$(mysql --user='oxid' --password='secret' -B -N -e \"Select TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'oxid' AND TABLE_TYPE != 'VIEW' AND TABLE_NAME NOT IN('oxadminlog')\" | grep -v Tables_in | xargs)"],
+#    dump_options => $oxid::params::default_remote_dump_options_latin1,
+#    compression => "bzip2",
+#    purge => true
+#  }  
 define oxid::sshFetchRemoteSQL (
   $db_name            = $oxid::params::db_name,
   $db_user            = $oxid::params::db_user,

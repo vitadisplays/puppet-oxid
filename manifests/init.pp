@@ -3,19 +3,68 @@ import "config.pp"
 import "remote-utils.pp"
 import "php/zendguardloader.pp"
 
-# Class: vitadisplays_oxid
+# Class: oxid
 #
-# This module manages vitadisplays_oxid
+# This class installs Oxid.
 #
-# Parameters: none
+# Parameters:
+#
+#   - repository          The repository to get from
+#   - source            The location of the setup archive in the defined repository. For output mapping use a hash, like { "index.php" => "OXID_ESHOP_CE_CURRENT.zip"}. This will download index.php to download file OXID_ESHOP_CE_CURRENT.zip. Helpfully to download from oxid default location.
+#   - purge             If true, deletes the shop dir.
+#   - shop_dir            The oxid shop directroy
+#   - compile_dir         The oxid compile directroy
+#   - db_type           Default is mysql and is only supported type.
+#   - db_host           Oxid database host
+#   - db_name           Oxid database name
+#   - db_user           Oxid database user
+#   - db_password         Oxid database password
+#   - shop_url            Oxid shop url
+#   - shop_ssl_url          Oxid shop ssl url
+#   - admin_ssl_url         Oxid admin ssl url
+#   - sql_charset         The chaset of the sql files. Default latin1.
+#   - mysql_user          MySQL User to prepare database
+#   - mysql_password        MySQL password
+#   - rewrite_base          Rewrite Base in the .htaccess file
+#   - config_content        Your own oxyid configuration content
+#   - htaccess_content        Your own htaccess configuration content 
+#   - config_source         Your own oxid configuration source
+#   - htaccess_source       Your own oxid htaccess source
+#   - config_extra_replacements   Extra replacements for oxid configuration. Example: {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }
+#   - htaccess_extra_replacements Extra replacements for htaccess
+#   - db_setup_sql          The setup file to execute. By default "setup/sql/database.sql"
+#   - extra_db_setup_sqls     Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"] 
+#   - owner             The owner of the directories
+#   - group             The group of the directories
 #
 # Actions:
+#   - Download and install oxid
+#   - Create/drop and setups database
+#   - Confugure config.inc.php and .htaccess
+#   - Check File permission, owner and group
+#   - update views
 #
-# Requires: see Modulefile
+# Requires:
+#   - Repository
+#   - Apache instance
+#   - MySQL Server instance
+#   - PHP
 #
 # Sample Usage:
-#
-
+#    class { oxid:
+#    source              => "OXID_ESHOP_EE_4.4.8_34028_for_PHP5.3.zip",
+#    repository          => "oxidee",
+#    shop_dir            => "/srv/www/oxid",
+#    compile_dir         => "/srv/www/oxid/tmp",
+#    db_host             => "localhost",
+#    db_name             => "oxid",
+#    db_user             => "oxid",
+#    db_password         => "secret",
+#    shop_ssl_url        => "https://myhostname",
+#    admin_ssl_url       => "https://myhostname/admin",
+#    mysql_user          => "root",
+#    mysql_password      => "secret"
+#  }
 class oxid (
   $source,
   $repository          = $::oxid::params::default_repository,
@@ -52,7 +101,7 @@ class oxid (
   include 'stdlib'
   include ::oxid::apache::params
   include oxid::mysql::params
-  
+
   if defined(Class['mysql::server']) {
     Class['mysql::server'] -> Oxid::Mysql::Dropdb["${name}: drop database"]
   }

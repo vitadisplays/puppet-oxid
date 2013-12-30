@@ -1,3 +1,18 @@
+# Class: oxid::php::zendguardloader 
+#
+# This class installs Zend Guard.
+#
+# Parameters:
+#
+# Actions:
+#   - Download and install Zendguard
+#   - Confugure zend_guard.ini
+#
+# Requires:
+#
+# Sample Usage:
+#  class { 'oxid::php::install':  }
+#
 class oxid::php::zendguardloader (
   $php_dir       = "/etc/php5/apache2/conf.d",
   $extension_dir = "/usr/local/zend/lib/php/extensions",

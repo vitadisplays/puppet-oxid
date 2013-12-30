@@ -1,3 +1,19 @@
+# Class: oxid::php::install
+#
+# This class installs PHP.
+# For more information see https://forge.puppetlabs.com/nodes/php.
+#
+# Parameters:
+#
+# Actions:
+#   - Install PHP
+#   - Confugure php
+#
+# Requires:
+#
+# Sample Usage:
+#  class { 'oxid::php::install':  }
+#
 class oxid::php::install (
   $ensure   = $oxid::php::params::ensure,
   $package  = $oxid::php::params::package,
