@@ -74,11 +74,3 @@ define oxid::unpack ($destination, $source = undef, $timeout = 0, $unless = unde
     }
   }
 }
-
-define oxid::unpackModul ($shop_dir, $source = undef, $timeout = 0) {
-
-}
-
-define oxid::unpackTheme ($shop_dir, $source = undef, $timeout = 0) {
-
-}

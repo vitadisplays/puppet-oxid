@@ -22,6 +22,7 @@ class oxid::php::zendguardloader (
   $zend_loader_license_path          = "",
   $zend_loader_disable_licensing     = 0,
   $ini_source    = undef) inherits oxid::apache::params {
+  include ::oxid::params
     
   if defined(Class['apache::mod::php']) {
     Class['apache::mod::php'] -> Oxid::Php::Zendguardloader <| |>

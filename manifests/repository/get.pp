@@ -9,8 +9,8 @@ define oxid::repository::get ($repository, $source) {
       path   => $oxid::params::path,
       unless => "test -d '${directory}'"
     }
-  } 
-  
+  }
+
   ensure_resource($config['type'], $source, {
     'configuration' => $config,
     'source'        => $source,

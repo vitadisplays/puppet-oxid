@@ -10,7 +10,9 @@ import "php/zendguardloader.pp"
 # Parameters:
 #
 #   - repository          The repository to get from
-#   - source            The location of the setup archive in the defined repository. For output mapping use a hash, like { "index.php" => "OXID_ESHOP_CE_CURRENT.zip"}. This will download index.php to download file OXID_ESHOP_CE_CURRENT.zip. Helpfully to download from oxid default location.
+#   - source            The location of the setup archive in the defined repository. For output mapping use a hash, like {
+#   "index.php" => "OXID_ESHOP_CE_CURRENT.zip"}. This will download index.php to download file OXID_ESHOP_CE_CURRENT.zip. Helpfully
+#   to download from oxid default location.
 #   - purge             If true, deletes the shop dir.
 #   - shop_dir            The oxid shop directroy
 #   - compile_dir         The oxid compile directroy
@@ -27,13 +29,15 @@ import "php/zendguardloader.pp"
 #   - mysql_password        MySQL password
 #   - rewrite_base          Rewrite Base in the .htaccess file
 #   - config_content        Your own oxyid configuration content
-#   - htaccess_content        Your own htaccess configuration content 
+#   - htaccess_content        Your own htaccess configuration content
 #   - config_source         Your own oxid configuration source
 #   - htaccess_source       Your own oxid htaccess source
-#   - config_extra_replacements   Extra replacements for oxid configuration. Example: {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }
+#   - config_extra_replacements   Extra replacements for oxid configuration. Example:
+#   {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }
 #   - htaccess_extra_replacements Extra replacements for htaccess
 #   - db_setup_sql          The setup file to execute. By default "setup/sql/database.sql"
-#   - extra_db_setup_sqls     Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"] 
+#   - extra_db_setup_sqls     Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For
+#   Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]
 #   - owner             The owner of the directories
 #   - group             The group of the directories
 #
@@ -102,6 +106,11 @@ class oxid (
   include ::oxid::apache::params
   include oxid::mysql::params
 
+  Oxid::Repository::Config::File <| |> -> Class[oxid]
+  Oxid::Repository::Config::Wget <| |> -> Class[oxid]
+  Class[oxid] -> Oxid::Theme<| |>
+  Class[oxid] -> Oxid::Module<| |>
+  
   if defined(Class['mysql::server']) {
     Class['mysql::server'] -> Oxid::Mysql::Dropdb["${name}: drop database"]
   }

@@ -4,7 +4,9 @@
 #
 # Parameters:
 #   - repository          The repository to get from
-#   - source            The location of the setup archive in the defined repository. For output mapping use a hash, like { "index.php" => "OXID_ESHOP_CE_CURRENT.zip"}. This will download index.php to download file OXID_ESHOP_CE_CURRENT.zip. Helpfully to download from oxid default location.
+#   - source            The location of the setup archive in the defined repository. For output mapping use a hash, like {
+#   "index.php" => "OXID_ESHOP_CE_CURRENT.zip"}. This will download index.php to download file OXID_ESHOP_CE_CURRENT.zip. Helpfully
+#   to download from oxid default location.
 #   - purge             If true, deletes the shop dir.
 #   - shop_dir            The oxid shop directroy
 #   - compile_dir         The oxid compile directroy
@@ -18,18 +20,23 @@
 #   - admin_ssl_url         Oxid admin ssl url
 #   - rewrite_base          Rewrite Base in the .htaccess file
 #   - config_content        Your own oxyid configuration content
-#   - htaccess_content        Your own htaccess configuration content 
+#   - htaccess_content        Your own htaccess configuration content
 #   - config_source         Your own oxid configuration source
 #   - htaccess_source       Your own oxid htaccess source
-#   - config_extra_replacements   Extra replacements for oxid configuration. Example: {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }
+#   - config_extra_replacements   Extra replacements for oxid configuration. Example:
+#   {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }
 #   - htaccess_extra_replacements Extra replacements for htaccess
 #   - db_setup_sql          The setup file to execute. By default "setup/sql/database.sql"
-#   - extra_db_setup_sqls     Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"] 
+#   - extra_db_setup_sqls     Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For
+#   Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]
 #   - owner             The owner of the directories
 #   - group             The group of the directories
-#   - copy_this           before or after update process to copy all files from the copy_this directory to the shop directory. Use none to stop copy.
-#   - changed_full        before or after update process to copy all files from the xhanged_full directory to the shop directory. Use none to stop copy.
-#   - run_method          cli or sql. In the cli mode the run_cli.php will be executed and in sql mode only the sql files will be imported.
+#   - copy_this           before or after update process to copy all files from the copy_this directory to the shop directory. Use
+#   none to stop copy.
+#   - changed_full        before or after update process to copy all files from the xhanged_full directory to the shop directory.
+#   Use none to stop copy.
+#   - run_method          cli or sql. In the cli mode the run_cli.php will be executed and in sql mode only the sql files will be
+#   imported.
 #   - answers             Anwser array
 #   - fail_on_error       Some times some sql statments failed. to ignore this you can change the fail on error behaviour.
 #   - updateViews         If true, update all views
@@ -100,6 +107,10 @@ define oxid::update (
   include 'stdlib'
   include ::oxid::apache::params
   include oxid::mysql::params
+
+  Oxid::Repository::Config::File <| |> -> Oxid::Update[$name] -> Oxid::Theme <| |>
+  Oxid::Repository::Config::Wget <| |> -> Oxid::Update[$name] -> Oxid::Module <| |>
+
   validate_re($copy_this, ['^before$', '^after$', '^never$'], "Only before, after or never for copy_this parameter are supported.")
   validate_re($changed_full, ['^before$', '^after$', '^never$'], "Only before, after or never for changed_full parameter are supported."
   )

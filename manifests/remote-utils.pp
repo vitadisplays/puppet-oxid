@@ -83,13 +83,6 @@ define oxid::sshFetchRemoteData (
     }
   }
 
-  $req = unique([Class[oxid::package::packer] /*,
-                                               * defined(Oxid::Conf["oxid"]) ? {
-                                               * true    => Oxid::Conf["oxid"],
-                                               * default => Class[oxid::package::packer]
-                                               *}
-                                               */])
-
   if $purge {
     exec { "${name} purge ${archive}'":
       command => "rm -f -r '${archive}'",
@@ -113,7 +106,7 @@ define oxid::sshFetchRemoteData (
     path    => $oxid::params::path,
     unless  => "test -f '${archive}'",
     timeout => $timeout,
-    require => $req
+    require => Class[oxid::package::packer]
   } ->
   exec { "rm -f '${real_import_dir}/${ident_file}.private'":
     path   => $oxid::params::path,
@@ -126,7 +119,7 @@ define oxid::sshFetchRemoteData (
       true    => Oxid::FileCheck["oxid"],
       default => undef
     },
-    require => $req
+    require => Class[oxid::package::packer] 
   }
 }
 
@@ -227,13 +220,6 @@ define oxid::sshFetchRemoteSQL (
     }
   }
 
-  $req = unique([Class["oxid::package::packer"] /*,
-                                                 * defined(Oxid::Mysql::Execfile["oxid: init database ${db_name}"]) ? {
-                                                 * true    => Oxid::Mysql::Execfile["oxid: init database ${db_name}"],
-                                                 * default => Class["oxid::package::packer"]
-                                                 *}
-                                                 */ ])
-
   if $purge {
     exec { "${name}: purge ${archive}":
       command => "rm -f -r '${archive}'",
@@ -258,7 +244,7 @@ define oxid::sshFetchRemoteSQL (
     path    => $oxid::params::path,
     unless  => "test -f '${archive}'",
     timeout => $timeout,
-    require => $req
+    require => Class["oxid::package::packer"]
   } ->
   exec { "rm -f '${real_import_dir}/${ident_file}.private'":
     path   => $oxid::params::path,
@@ -277,6 +263,6 @@ define oxid::sshFetchRemoteSQL (
       true    => Oxid::UpdateViews["oxid"],
       default => undef
     },
-    require     => $req
+    require     => Class["oxid::package::packer"]
   }
 }
