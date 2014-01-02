@@ -3,10 +3,10 @@ class oxid::params {
   $compile_dir = "${shop_dir}/tmp"
 
   $shop_url = "http://${hostname}"
-  
+
   $shop_ssl_url = undef
   $admin_ssl_url = undef
-  
+
   $db_type = "mysql"
   $db_host = "localhost"
   $db_port = 3306
@@ -15,7 +15,7 @@ class oxid::params {
   $db_password = "oxid"
 
   $default_charset = "latin1"
-  
+
   $utf8_mode = 0
 
   $rewrite_base = "/"
@@ -26,7 +26,6 @@ class oxid::params {
   $default_shopid = 1
   $config_key = 'fq45QS09_fqyx09239QQ'
 
-  
   $apache_mods = ['vhost_alias', 'php5', 'rewrite', 'headers']
 
   $packages = ['shtool', 'ssl-cert', 'uuid-dev']
@@ -70,4 +69,13 @@ class oxid::params {
   }
 
   $supported_archives = [".phar", ".zip", ".tar.gz", "tgz", ".gz", ".bz2"]
+
+  $default_module_copy_map = {
+    'copy_this/'    => '',
+    'changed_full/' => ''
+  }
+
+  $default_module_copy_map_flat = {
+    '' => ''
+  }
 }
