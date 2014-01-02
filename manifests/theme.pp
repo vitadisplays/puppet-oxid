@@ -73,7 +73,7 @@ define oxid::theme (
   }
 }
 
-define oxid::unpack_theme ($destination, $source = undef, $repository, $timeout = 0, $copy_map) {
+define oxid::unpack_theme ($destination, $source = undef, $repository, $timeout = 0, $copy_map = undef) {
   $repo_config = $oxid::params::repository_configs["${repository}"]
   $repo_dir = $repo_config['directory']
   $tmp_dir = $oxid::params::tmp_dir
