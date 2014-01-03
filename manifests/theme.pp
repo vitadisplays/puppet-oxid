@@ -71,10 +71,8 @@ define oxid::theme (
 
         replace { "${name}: configure ${shop_dir}/config.inc.php":
           file        => "${shop_dir}/config.inc.php",
-          replacement => {
-            "\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme = '${name}';"
-          }
-          ,
+          pattern     => "\$this->sTheme[ ]*=[ ]*.*;",
+          replacement => "\$this->sTheme = '${name}';",
           notify      => Oxid::FileCheck[$name]
         }
       }
