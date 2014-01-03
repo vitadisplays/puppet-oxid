@@ -68,6 +68,15 @@ define oxid::theme (
           ,
           require  => Oxid::Unpack_theme[$name]
         }
+
+        replace { "${name}: configure ${shop_dir}/config.inc.php":
+          file        => "${shop_dir}/config.inc.php",
+          replacement => {
+            "\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme = '${name}';"
+          }
+          ,
+          notify      => Oxid::FileCheck[$name]
+        }
       }
     }
   }
@@ -114,6 +123,6 @@ define oxid::unpack_theme ($destination, $source = undef, $repository, $timeout 
       require     => Oxid::Repository::Get[$name]
     }
   } else {
-    fail("Value for copy_map undef or hash expected.")
+    fail("Parameter copy_map expectd undef or hash value.")
   }
 }

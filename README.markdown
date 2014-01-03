@@ -174,7 +174,7 @@ Custom configuration files or content can be defined.
 	- htaccess_content				Your own htaccess configuration content	
 	- config_source					Your own oxid configuration source
 	- htaccess_source				Your own oxid htaccess source
-	- config_extra_replacements		Extra replacements for oxid configuration. Example: {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }
+	- config_extra_replacements		Extra replacements for oxid configuration. Example: {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme = 'basic';" }
 	- htaccess_extra_replacements	Extra replacements for htaccess
 	- db_setup_sql					The setup file to execute. By default "setup/sql/database.sql"
 	- extra_db_setup_sqls			Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"] 
