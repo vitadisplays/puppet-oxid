@@ -240,7 +240,7 @@ define oxid::sshFetchRemoteSQL (
     mode    => 0600
   } ->
   exec { "${name}: remote mysqldump ${remote_db_name} ${dump_tables_str}":
-    command => "ssh ${$option_str} ${name} 'mysqldump --host=\"$remote_db_host\" --port=${remote_db_port} --user=\"$remote_db_user\" --password=\"$remote_db_password\" $dump_options_str \"$remote_db_name\" $dump_tables_str ${create_prg}' > ${archive}",
+    command => "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}",
     path    => $oxid::params::path,
     unless  => "test -f '${archive}'",
     timeout => $timeout,

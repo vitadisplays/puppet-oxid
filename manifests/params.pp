@@ -74,8 +74,4 @@ class oxid::params {
     'copy_this/'    => '',
     'changed_full/' => ''
   }
-
-  $default_module_copy_map_flat = {
-    '' => ''
-  }
 }
