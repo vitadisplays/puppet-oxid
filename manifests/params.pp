@@ -37,16 +37,16 @@ class oxid::params {
   $default_remote_dump_options_latin1 = [
     "--single-transaction",
     "--add-drop-table",
+    "--create-options",
     "--allow-keywords",
-    "--skip-extended-insert",
     "--hex-blob",
     "--default-character-set=latin1"]
 
   $default_remote_dump_options_utf8 = [
     "--single-transaction",
     "--add-drop-table",
+    "--create-options",
     "--allow-keywords",
-    "--skip-extended-insert",
     "--hex-blob",
     "--default-character-set=utf8"]
 
