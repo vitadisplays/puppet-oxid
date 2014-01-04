@@ -15,21 +15,17 @@ include oxid::params
 #   - Oxid instance
 #
 # Sample Usage:
-#    oxid::sshFetchRemoteData { "root@myremotehostname": 
+#    oxid::sshFetchRemoteData { "root@myremotehostname":
 #     shop_dir => "/srv/www/oxid",
 #     remote_dir => "/srv/www/oxid",
 #     ssh_ident_content => file("path to private key"),
-#     compression => "bzip2",
-#     purge => true
-#    }  
+#    }
 define oxid::sshFetchRemoteData (
   $shop_dir,
   $remote_dir,
-  $includes    = ["out/pictures", "out/media", "out/downloads"],
-  $proxy_dir   = undef,
-  $ssh_options = [
-    '-C',
-    '-o StrictHostKeyChecking=no'],
+  $includes    = ["out/pictures", "out/media"],
+  $backup_dir  = undef,
+  $ssh_options = ['-C', '-o StrictHostKeyChecking=no'],
   $ssh_ident_content,
   $timeout     = 18000,
   $compression = 'gzip',
@@ -39,87 +35,120 @@ define oxid::sshFetchRemoteData (
   validate_absolute_path($shop_dir, $remote_dir)
   validate_re($name, '^.*@.*$')
 
-  if !defined(Class[oxid::package::packer]) {
-    include oxid::package::packer
-  }
-
   if defined(Oxid::Conf["oxid"]) {
     Oxid::Conf["oxid"] ~> Oxid::SshFetchRemoteData[$name]
   }
 
-  $ident_file = inline_template("<%= (0...32).map{ ('a'..'z').to_a[rand(26)] }.join %>")
   $tmp_dir = $oxid::params::tmp_dir
+  $ident_file = inline_template("<%= File.join(@tmp_dir, (0...32).map{ ('a'..'z').to_a[rand(26)] }.join + '.private') %>")
 
-  $real_import_dir = $proxy_dir ? {
-    undef   => inline_template('<%= File.join(@tmp_dir, "proxy", @name.split("@").last) %>'),
-    default => $proxy_dir
-  }
   $option_str = $ssh_options ? {
     undef   => '',
-    default => join(unique(concat($ssh_options, ["-i '${real_import_dir}/${ident_file}.private'"])), ' ')
+    default => join(unique(concat($ssh_options, ["-i '${ident_file}'"])), ' ')
   }
 
-  $includes_str = join($includes, ' ')
-
-  case $compression {
-    'bzip2' : {
-      $archive = "${real_import_dir}/data.tar.bz2"
-      $create_prg = "ssh ${$option_str} ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cj -T - --null' > '${$archive}'"
-      $extract_prg = "tar -xjf '${$archive}' --directory '${shop_dir}'"
-    }
-    'gzip'  : {
-      $archive = "${real_import_dir}/data.tar.gz"
-      $create_prg = "ssh ${$option_str} ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cz -T - --null' > '${$archive}'"
-      $extract_prg = "tar -xzf '${$archive}' --directory '${shop_dir}'"
-    }
-    'none'  : {
-      $archive = "${real_import_dir}/data.tar"
-      $create_prg = "ssh ${$option_str} ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -c -T - --null' > '${$archive}'"
-      $extract_prg = "tar -xf '${$archive}' --directory '${shop_dir}'"
-    }
-
-    default : {
-      fail("${compression} not supported.")
-    }
-  }
-
-  if $purge {
-    exec { "${name} purge ${archive}'":
-      command => "rm -f -r '${archive}'",
-      path    => $oxid::params::path,
-      unless  => "test -e '${archive}'",
-      before  => Exec["${name} data mkdir -p '${real_import_dir}'"]
-    }
-  }
-
-  exec { "${name} data mkdir -p '${real_import_dir}'":
-    command => "mkdir -p '${real_import_dir}'",
+  exec { "${name}: data mkdir -p '${tmp_dir}'":
+    command => "mkdir -p '${tmp_dir}'",
     path    => $oxid::params::path,
-    unless  => "test -d '${real_import_dir}'"
+    unless  => "test -d '${tmp_dir}'"
   } ->
-  file { "${real_import_dir}/${ident_file}.private":
+  file { $ident_file:
     ensure  => present,
     content => $ssh_ident_content,
     mode    => 0600
-  } ->
-  exec { $create_prg:
-    path    => $oxid::params::path,
-    unless  => "test -f '${archive}'",
-    timeout => $timeout,
-    require => Class[oxid::package::packer]
-  } ->
-  exec { "rm -f '${real_import_dir}/${ident_file}.private'":
-    path   => $oxid::params::path,
-    onlyif => "test -f '${real_import_dir}/${ident_file}.private'"
-  } ->
-  exec { $extract_prg:
-    path    => $oxid::params::path,
-    timeout => $timeout,
-    notify  => defined(Oxid::FileCheck["oxid"]) ? {
-      true    => Oxid::FileCheck["oxid"],
-      default => undef
-    },
-    require => Class[oxid::package::packer] 
+  }
+
+  exec { "rm -f '${ident_file}'":
+    path        => $oxid::params::path,
+    onlyif      => "test -f '${ident_file}'",
+    refreshonly => true
+  }
+
+  if $backup_dir != undef {
+    if !defined(Class[oxid::package::packer]) {
+      include oxid::package::packer
+    }
+
+    $includes_str = join($includes, ' ')
+    $backup_file = inline_template('<%= File.join(@backup_dir, @name.split("@").last) %>')
+
+    case $compression {
+      'bzip2' : {
+        $archive = "${backup_dir}/data.tar.bz2"
+        $create_prg = "ssh ${$option_str} ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cj -T - --null' > '${$archive}'"
+        $extract_prg = "tar -xjf '${$archive}' --directory '${shop_dir}'"
+      }
+      'gzip'  : {
+        $archive = "${backup_dir}/data.tar.gz"
+        $create_prg = "ssh ${$option_str} ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cz -T - --null' > '${$archive}'"
+        $extract_prg = "tar -xzf '${$archive}' --directory '${shop_dir}'"
+      }
+      'none'  : {
+        $archive = "${backup_dir}/data.tar"
+        $create_prg = "ssh ${$option_str} ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -c -T - --null' > '${$archive}'"
+        $extract_prg = "tar -xf '${$archive}' --directory '${shop_dir}'"
+      }
+
+      default : {
+        fail("${compression} not supported.")
+      }
+    }
+
+    if $purge {
+      exec { "${name} purge ${archive}'":
+        command => "rm -f -r '${archive}'",
+        path    => $oxid::params::path,
+        unless  => "test -e '${archive}'",
+        before  => Exec["${name}: data mkdir -p '${backup_dir}'"]
+      }
+    }
+    exec { "${name}: data mkdir -p '${backup_dir}'":
+      command => "mkdir -p '${backup_dir}'",
+      path    => $oxid::params::path,
+      unless  => "test -d '${backup_dir}'"
+    } ->
+    exec { $create_prg:
+      path    => $oxid::params::path,
+      unless  => "test -f '${archive}'",
+      timeout => $timeout,
+      notify  => Exec["rm -f '${ident_file}'"],
+      require => Class[oxid::package::packer]
+    } ->
+    exec { $extract_prg:
+      path    => $oxid::params::path,
+      timeout => $timeout,
+      notify  => defined(Oxid::FileCheck["oxid"]) ? {
+        true    => Oxid::FileCheck["oxid"],
+        default => undef
+      },
+      require => Class[oxid::package::packer]
+    }
+  } else {
+    if (count($includes) < 1) {
+      fail("No includes defined.")
+    }
+
+    if !defined(Class[oxid::package::utils]) {
+      include oxid::package::utils
+    }
+
+    $includes_str = join(prefix(suffix($includes, "'"), "--include '"), ' ')
+    
+    $commands = split(inline_template("<%= @includes.collect{|i| 'rsync -ravz -e \"ssh ' + @option_str + '\" \"' + @name + '\":\"' + File.join(@remote_dir, i) + '/\" \"' + File.join(@shop_dir, i) + '\" ; ' } %>"), ' ; ')
+    
+    notice($commands)
+    
+    /*$commands = suffix(prefix($includes, "rsync -rav -e \"ssh ${option_str}\" '${name}':'${remote_dir}/"), "' '${shop_dir}'")*/    
+    
+    exec { $commands:
+      path    => $oxid::params::path,
+      timeout => $timeout,
+      notify  => defined(Oxid::FileCheck["oxid"]) ? {
+        true    => [Exec["rm -f '${ident_file}'"], Oxid::FileCheck["oxid"]],
+        default => Exec["rm -f '${ident_file}'"]
+      },
+      require => [Class[oxid::package::utils], File[$ident_file]]
+    }
   }
 }
 
@@ -146,11 +175,10 @@ define oxid::sshFetchRemoteData (
 #    remote_db_name => "oxid",
 #    remote_db_user => "oxid",
 #    remote_db_password => "secret",
-#    dump_tables => ["$(mysql --user='oxid' --password='secret' -B -N -e \"Select TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'oxid' AND TABLE_TYPE != 'VIEW' AND TABLE_NAME NOT IN('oxadminlog')\" | grep -v Tables_in | xargs)"],
+#    dump_tables => ["$(mysql --user='oxid' --password='secret' -B -N -e \"Select TABLE_NAME FROM information_schema.TABLES WHERE
+#    TABLE_SCHEMA = 'oxid' AND TABLE_TYPE != 'VIEW' AND TABLE_NAME NOT IN('oxadminlog')\" | grep -v Tables_in | xargs)"],
 #    dump_options => $oxid::params::default_remote_dump_options_latin1,
-#    compression => "bzip2",
-#    purge => true
-#  }  
+#  }
 define oxid::sshFetchRemoteSQL (
   $db_name            = $oxid::params::db_name,
   $db_user            = $oxid::params::db_user,
@@ -162,7 +190,7 @@ define oxid::sshFetchRemoteSQL (
   $remote_db_password = $oxid::params::db_password,
   $remote_db_host     = $oxid::params::db_host,
   $remote_db_port     = $oxid::params::db_port,
-  $proxy_dir          = undef,
+  $backup_dir         = undef,
   $ssh_options        = [
     '-C',
     '-o StrictHostKeyChecking=no'],
@@ -176,93 +204,110 @@ define oxid::sshFetchRemoteSQL (
   validate_bool($purge)
   validate_re($name, '^.*@.*$')
 
-  if !defined(Class[oxid::package::packer]) {
-    include oxid::package::packer
-  }
-
   if defined(Oxid::Conf["oxid"]) {
     Oxid::Conf["oxid"] ~> Oxid::SshFetchRemoteSQL[$name]
-  }
-
-  $ident_file = inline_template("<%= (0...32).map{ ('a'..'z').to_a[rand(26)] }.join %>")
-  $tmp_dir = $oxid::params::tmp_dir
-
-  $real_import_dir = $proxy_dir ? {
-    undef   => inline_template('<%= File.join(@tmp_dir, "proxy", @name.split("@").last) %>'),
-    default => $proxy_dir
-  }
-  $option_str = $ssh_options ? {
-    undef   => '',
-    default => join(unique(concat($ssh_options, ["-i '${real_import_dir}/${ident_file}.private'"])), ' ')
   }
 
   $dump_options_str = join(unique($dump_options), ' ')
   $dump_tables_str = join(unique($dump_tables), ' ')
 
-  case $compression {
-    'bzip2' : {
-      $archive = "${real_import_dir}/sql.bz2"
-      $create_prg = '| bzip2 --best'
-      $extract_prg = "bunzip2"
-    }
-    'gzip'  : {
-      $archive = "${real_import_dir}/sql.gz"
-      $create_prg = '| gzip --best'
-      $extract_prg = "gunzip"
-    }
-    'none'  : {
-      $archive = "${real_import_dir}/sql"
-      $create_prg = ''
-      $extract_prg = undef
-    }
-    default : {
-      fail("${compression} not supported.")
-    }
+  $tmp_dir = $oxid::params::tmp_dir
+  $ident_file = inline_template("<%= File.join(@tmp_dir, (0...32).map{ ('a'..'z').to_a[rand(26)] }.join + '.private') %>")
+
+  $option_str = $ssh_options ? {
+    undef   => '',
+    default => join(unique(concat($ssh_options, ["-i '${ident_file}'"])), ' ')
   }
 
-  if $purge {
-    exec { "${name}: purge ${archive}":
-      command => "rm -f -r '${archive}'",
-      path    => $oxid::params::path,
-      unless  => "test -e '${archive}'",
-      before  => Exec["${name}: sql mkdir -p '${real_import_dir}'"]
-    }
-  }
-
-  exec { "${name}: sql mkdir -p '${real_import_dir}'":
-    command => "mkdir -p '${real_import_dir}'",
+  exec { "${name}: sql mkdir -p '${tmp_dir}'":
+    command => "mkdir -p '${tmp_dir}'",
     path    => $oxid::params::path,
-    unless  => "test -d '${real_import_dir}'"
+    unless  => "test -d '${tmp_dir}'"
   } ->
-  file { "${real_import_dir}/${ident_file}.private":
+  file { $ident_file:
     ensure  => present,
     content => $ssh_ident_content,
     mode    => 0600
-  } ->
-  exec { "${name}: remote mysqldump ${remote_db_name} ${dump_tables_str}":
-    command => "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}",
-    path    => $oxid::params::path,
-    unless  => "test -f '${archive}'",
-    timeout => $timeout,
-    require => Class["oxid::package::packer"]
-  } ->
-  exec { "rm -f '${real_import_dir}/${ident_file}.private'":
-    path   => $oxid::params::path,
-    onlyif => "test -f '${real_import_dir}/${ident_file}.private'"
-  } ->
-  oxid::mysql::execFile { $name:
-    host        => $db_host,
-    port        => $db_port,
-    user        => $db_user,
-    db          => $db_name,
-    password    => $db_password,
-    source      => $archive,
-    extract_cmd => $extract_prg,
-    timeout     => $timeout,
-    notify      => defined(Oxid::UpdateViews["oxid"]) ? {
-      true    => Oxid::UpdateViews["oxid"],
-      default => undef
-    },
-    require     => Class["oxid::package::packer"]
+  }
+
+  exec { "rm -f '${ident_file}'":
+    path        => $oxid::params::path,
+    onlyif      => "test -f '${ident_file}'",
+    refreshonly => true
+  }
+
+  if $backup_dir != undef {
+    if !defined(Class[oxid::package::packer]) {
+      include oxid::package::packer
+    }
+
+    $backup_file = inline_template('<%= File.join(@backup_dir, @name.split("@").last) %>')
+
+    case $compression {
+      'bzip2' : {
+        $archive = "${backup_file}.sql.bz2"
+        $create_prg = '| bzip2 --best'
+        $extract_prg = "bunzip2"
+      }
+      'gzip'  : {
+        $archive = "${backup_file}.sql.gz"
+        $create_prg = '| gzip --best'
+        $extract_prg = "gunzip"
+      }
+      'none'  : {
+        $archive = "${backup_file}.sql"
+        $create_prg = ''
+        $extract_prg = undef
+      }
+      default : {
+        fail("${compression} not supported.")
+      }
+    }
+
+    exec { "${name}: sql mkdir -p '${backup_dir}'":
+      command => "mkdir -p '${backup_dir}'",
+      path    => $oxid::params::path,
+      unless  => "test -d '${backup_dir}'"
+    } ->
+    exec { "${name}: remote mysqldump ${remote_db_name} ${dump_tables_str}":
+      command => "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}",
+      path    => $oxid::params::path,
+      unless  => "test -f '${archive}'",
+      timeout => $timeout,
+      notify  => Exec["rm -f '${ident_file}'"],
+      require => [Class["oxid::package::packer"], File[$ident_file]]
+    } ->
+    oxid::mysql::execFile { $name:
+      host        => $db_host,
+      port        => $db_port,
+      user        => $db_user,
+      db          => $db_name,
+      password    => $db_password,
+      source      => $archive,
+      extract_cmd => $extract_prg,
+      timeout     => $timeout,
+      notify      => defined(Oxid::UpdateViews["oxid"]) ? {
+        true    => Oxid::UpdateViews["oxid"],
+        default => undef
+      },
+      require     => Class["oxid::package::packer"]
+    }
+
+    if $purge {
+      exec { "${name}: purge ${archive}":
+        command => "rm -f -r '${archive}'",
+        path    => $oxid::params::path,
+        unless  => "test -e '${archive}'",
+        before  => Exec["${name}: sql mkdir -p '${backup_dir}'"]
+      }
+    }
+  } else {
+    exec { "${name}: remote mysqldump ${remote_db_name} ${dump_tables_str}":
+      command => "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' | mysql --host='${db_host}' --port=${db_port} --user='${db_user}' --password='${db_password}' '${db_name}'",
+      path    => $oxid::params::path,
+      timeout => $timeout,
+      notify  => Exec["rm -f '${ident_file}'"],
+      require => File[$ident_file]
+    }
   }
 }

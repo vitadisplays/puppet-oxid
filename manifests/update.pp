@@ -97,6 +97,7 @@ define oxid::update (
   $group            = $apache::params::group,
   $source           = undef,
   $repository       = $oxid::params::default_repository,
+  $source_password  = undef,
   $copy_this        = 'before',
   $changed_full     = 'after',
   $run_method       = "cli",
@@ -148,7 +149,8 @@ define oxid::update (
   oxid::repository::unpack { "${name}: ${mysource}":
     repository  => $repository,
     source      => $mysource,
-    destination => "${oxid::params::tmp_dir}/${filename}"
+    destination => "${oxid::params::tmp_dir}/${filename}",
+    password    => $source_password
   }
 
   exec { $cmds[3]:

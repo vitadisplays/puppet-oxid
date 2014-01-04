@@ -1,6 +1,6 @@
 include oxid::params
 
-define oxid::repository::unpack ($repository, $source = undef, $destination, $timeout = 0) {
+define oxid::repository::unpack ($repository, $source = undef, $destination, $timeout = 0, $password = undef) {
   $mysource = $source ? {
     undef   => $name,
     default => $source
@@ -17,7 +17,7 @@ define oxid::repository::unpack ($repository, $source = undef, $destination, $ti
   } else {
     $_source = $mysource
   }
-  
+
   $repo_config = $oxid::params::repository_configs["${repository}"]
   $repo_dir = $repo_config['directory']
 
@@ -26,6 +26,7 @@ define oxid::repository::unpack ($repository, $source = undef, $destination, $ti
   ::oxid::unpack { $name:
     source      => $file,
     destination => $destination,
-    timeout     => $timeout
+    timeout     => $timeout,
+    password    => $password
   }
 }

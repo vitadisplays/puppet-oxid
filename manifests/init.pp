@@ -72,6 +72,7 @@ import "php/zendguardloader.pp"
 class oxid (
   $source,
   $repository          = $::oxid::params::default_repository,
+  $source_password     = undef,
   $shop_dir            = $::oxid::params::shop_dir,
   $compile_dir         = $::oxid::params::compile_dir,
   $db_type             = $::oxid::params::db_type,
@@ -100,7 +101,7 @@ class oxid (
   $extra_db_setup_sqls = undef,
   $owner               = $apache::params::user,
   $group               = $apache::params::group,
-  $purge               = true,
+  $purge               = false,
   $sql_charset         = $oxid::params::default_charset) inherits ::oxid::params {
   include 'stdlib'
   include ::oxid::apache::params
@@ -108,9 +109,9 @@ class oxid (
 
   Oxid::Repository::Config::File <| |> -> Class[oxid]
   Oxid::Repository::Config::Wget <| |> -> Class[oxid]
-  Class[oxid] -> Oxid::Theme<| |>
-  Class[oxid] -> Oxid::Module<| |>
-  
+  Class[oxid] -> Oxid::Theme <| |>
+  Class[oxid] -> Oxid::Module <| |>
+
   if defined(Class['mysql::server']) {
     Class['mysql::server'] -> Oxid::Mysql::Dropdb["${name}: drop database"]
   }
@@ -163,7 +164,8 @@ class oxid (
   oxid::repository::unpack { "${name}: ${source}":
     repository  => $repository,
     source      => $source,
-    destination => $shop_dir
+    destination => $shop_dir,
+    password    => $source_password
   } ->
   oxid::mysql::dropdb { "${name}: drop database":
     host     => $db_host,
