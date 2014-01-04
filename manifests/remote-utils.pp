@@ -133,13 +133,9 @@ define oxid::sshFetchRemoteData (
     }
 
     $includes_str = join(prefix(suffix($includes, "'"), "--include '"), ' ')
-    
+
     $commands = split(inline_template("<%= @includes.collect{|i| 'rsync -ravz -e \"ssh ' + @option_str + '\" \"' + @name + '\":\"' + File.join(@remote_dir, i) + '/\" \"' + File.join(@shop_dir, i) + '\" ; ' } %>"), ' ; ')
-    
-    notice($commands)
-    
-    /*$commands = suffix(prefix($includes, "rsync -rav -e \"ssh ${option_str}\" '${name}':'${remote_dir}/"), "' '${shop_dir}'")*/    
-    
+
     exec { $commands:
       path    => $oxid::params::path,
       timeout => $timeout,
