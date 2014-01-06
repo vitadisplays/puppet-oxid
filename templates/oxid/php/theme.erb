@@ -1,0 +1,34 @@
+<?php
+
+define('OX_IS_ADMIN', 1);
+
+if (!defined('OX_BASE_PATH')) {
+    define('OX_BASE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR );
+}
+
+if ( !function_exists( 'getShopBasePath' )) {
+	function getShopBasePath() { 
+		return OX_BASE_PATH; 
+	} 
+}
+
+if (file_exists(getShopBasePath().'bootstrap.php')) {
+	require_once getShopBasePath() . "bootstrap.php";
+
+    $sTheme = '<%= @theme %>';
+    $oTheme = oxNew('oxtheme');    
+    
+    if (!$oTheme->load($sTheme)) {
+        exit("Can not load theme.");
+    }
+    try {
+        $oTheme->activate();
+        
+        $oCache = oxNew( 'oxcache' );
+        $oCache->reset();
+    } catch (oxException $oEx) {
+        exit($oEx);
+    }    
+}
+
+exit(0);

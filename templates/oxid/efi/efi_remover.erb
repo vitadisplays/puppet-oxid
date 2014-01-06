@@ -1,0 +1,6 @@
+
+
+SQL_COLS="SELECT distinct CONCAT('ALTER TABLE ', c.TABLE_NAME, ' DROP COLUMN ', c.COLUMN_NAME, ';') FROM information_schema.COLUMNS c INNER JOIN information_schema.TABLES t ON c.TABLE_NAME = t.TABLE_NAME AND t.TABLE_TYPE != 'VIEW' WHERE t.TABLE_SCHEMA = 'oxid' AND c.COLUMN_NAME LIKE 'oxefi%' order by c.COLUMN_NAME"
+TABLES=$(mysql --host="" --port="" --user'=$MUSER --password=$MPASS -B -N -e "")
+
+SQL_CONFIGS="DELETE FROM oxconfig where oxvarname like 'sEfi%'"

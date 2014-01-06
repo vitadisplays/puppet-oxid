@@ -1,4 +1,4 @@
-define oxid::shopConfigSinleAction (
+define oxid::shopConfigS (
   $shopid   = $oxid::params::default_shopid,
   $configs,
   $host     = $oxid::params::db_host,
@@ -9,9 +9,13 @@ define oxid::shopConfigSinleAction (
   $value = $configs[$name]
   $query = "UPDATE oxshops SET ${name}='${value}' WHERE oxid = '${shopid}'"
 
-  exec { $query:
-    command => "mysql -h ${host} -P ${port} -u${user} -p${password} ${db} -e \"${query}\"",
-    path    => $oxid::params::path
+  oxid::mysql::execSQL { "${name}: ${query}":
+    query    => $query,
+    host     => $host,
+    db       => $db,
+    port     => $port,
+    user     => $user,
+    password => $password
   }
 }
 
@@ -25,7 +29,7 @@ define oxid::shopConfig (
   $password = $oxid::params::db_password) {
   $configKeys = keys($configs)
 
-  oxid::shopConfigSinleAction { $configKeys:
+  oxid::shopConfigS { $configKeys:
     shopid   => $shopid,
     configs  => $configs,
     host     => $host,

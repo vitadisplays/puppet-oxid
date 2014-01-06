@@ -59,7 +59,6 @@ class oxid::php::zendguardloader (
   $source = $downloads["${version}-${hardwaremodel}"]
   $download_basename = inline_template("<%= File.basename(@source) %>")
   $download_basename_without_extension = inline_template("<%= File.basename(@download_basename, '.tar.gz') %>")
-  /* $archive_file = "${oxid::params::tmp_dir}/${download_basename}" */
   $version_dir = "php-${version}.x"
   $zend_loader_extension_file = "${extension_dir}/loader/${version_dir}/ZendGuardLoader.so"
 

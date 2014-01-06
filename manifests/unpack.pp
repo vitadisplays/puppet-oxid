@@ -20,7 +20,7 @@ define oxid::unpack ($destination, $source = undef, $timeout = 0, $unless = unde
         require => Class[oxid::package::packer]
       }
     }
-    /^(.*\.zip$)/             : {
+    /^(.*\.zip$|jar$)/             : {
       $extry_options = $password ? {
         undef   => "",
         default => " --password '${password}'"

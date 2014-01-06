@@ -1,23 +1,63 @@
+# Define: oxid::module
+#
+# This define install and activate an oxid module.
+#
+# This used a php script, using bootstrap.php, in the shop directory to activate the module.
+#
+# Parameters:
+#
+#   - ensure              present or absen. Default is present.
+#   - repository          The repository to get from
+#   - source              The location of the setup archive in the defined repository. For output mapping use a hash, like {
+#   "index.php" => "OXID_ESHOP_CE_CURRENT.zip"}. This will download index.php to download file OXID_ESHOP_CE_CURRENT.zip. Helpfully
+#   to download from oxid default location.
+#   - shopid              Shop id, Used for Enterprise Editions. Default is oxbase.
+#   - active              If true, activate module. Default is true.
+#   - shop_dir            The oxid shop directroy.
+#   - compile_dir         The oxid compile directroy
+#   - configurations      Hash configurations options. See define oxid::oxconfig for more details.
+#   - user                The owner of the directories
+#   - group               The group of the directories
+#   - copy_map            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'
+#   => '', 'changed_full/' => '' } for oxid default structure.
+#   - files               Array of files/directories to delete. Only used if ensure => 'absent'.
+#
+# Actions:
+#   - Download and install module
+#   - activate module
+#   - Configure module
+#   - Check File permission, owner and group
+#
+# Requires:
+#   - Repository
+#   - Apache instance
+#   - MySQL Server instance
+#   - PHP
+#   - Configured oxid shop
+#
+# Sample Usage:
+#    oxid::module {'oepaypal':
+#      shopid  => 1,
+#      shop_dir => "/srv/www/oxid",
+#      configurations =>  {
+#       'confbools'     => {
+#         'bl_xxxx' => false
+#       }
+#     }
+#   }
 define oxid::module (
-  $shop_dir      = $oxid::params::shop_dir,
-  $compile_dir   = $oxid::params::compile_dir,
-  $owner         = $apache::params::user,
-  $group         = $apache::params::group,
-  $shopid        = $oxid::params::default_shopid,
-  $source        = undef,
-  $repository    = undef,
-  $class_mapping = undef,
-  $copy_map      = undef,
-  $files         = undef,
-  $ensure        = "present",
-  $host          = $oxid::params::db_host,
-  $port          = $oxid::params::db_port,
-  $db            = $oxid::params::db_name,
-  $user          = $oxid::params::db_user,
-  $password      = $oxid::params::db_password,
-  $config_key    = $oxid::params::config_key) {
-  $module_path = get_module_path('oxid')
-
+  $active         = true,
+  $shop_dir       = $oxid::params::shop_dir,
+  $compile_dir    = $oxid::params::compile_dir,
+  $user           = $apache::params::user,
+  $group          = $apache::params::group,
+  $shopid         = $oxid::params::default_shopid,
+  $source         = undef,
+  $repository     = undef,
+  $copy_map       = undef,
+  $files          = undef,
+  $ensure         = "present",
+  $configurations = undef) {
   validate_string($name)
   validate_re($ensure, ["^present$", "^installed$", "^absent$", "^deleted$"])
 
@@ -31,44 +71,29 @@ define oxid::module (
     $delete_cmd = "rm -r -f ${shop_dir}/modules/${name}"
   }
 
+  $php_file = inline_template("<%= File.join(@shop_dir, (0...32).map{ ('a'..'z').to_a[rand(26)] }.join + '_module.php') %>")
+
   case $ensure {
     /absent|deleted/    : {
-      $jsonHash = {
-        'command'   => "delete",
-        'module'    => $class_mapping,
-        'shopid'    => $shopid,
-        'host'      => "${host}:${port}",
-        'db'        => $db,
-        'user'      => $user,
-        'password'  => $password,
-        'configkey' => $config_key
-      }
+      $command = "deactivate"
 
-      $cmd = inline_template('<%= require "json"; JSON.generate @jsonHash %>')
-
-      oxid::php::runner { "oxid-module ${name} absent":
-        source  => "${module_path}/functions/oxid/oxid-modules.php",
-        options => ["'${cmd}'"]
+      file { $php_file:
+        ensure  => 'present',
+        owner   => $user,
+        group   => $group,
+        mode    => "0755",
+        content => template("oxid/oxid/php/module.erb")
       } ->
-      exec { "${name}: purge module files":
+      oxid::php::runner { $php_file: source => $php_file, } ->
+      exec { "rm -f '${php_file}'": path => $oxid::params::path } ->
+      exec { "${name}: ${ensure} module files":
         command => $delete_cmd,
         path    => $oxid::params::path
       }
     }
 
     /present|installed/ : {
-      $jsonHash = {
-        'command'   => "add",
-        'module'    => $class_mapping,
-        'shopid'    => $shopid,
-        'host'      => "${host}:${port}",
-        'db'        => $db,
-        'user'      => $user,
-        'password'  => $password,
-        'configkey' => $config_key
-      }
-
-      $cmd = inline_template('<%= require "json"; JSON.generate @jsonHash %>')
+      $command = "activate"
 
       exec { "${name}: purge module files":
         command => $delete_cmd,
@@ -79,15 +104,42 @@ define oxid::module (
         source      => $source,
         repository  => $repository,
         copy_map    => $copy_map
-      } ->
-      oxid::php::runner { "module ${name} ${ensure}":
-        source  => "${module_path}/functions/oxid/oxid-modules.php",
-        options => ["'${cmd}'"]
       } -> oxid::fileCheck { $name:
         shop_dir    => $shop_dir,
         compile_dir => $compile_dir,
-        owner       => $owner,
+        owner       => $user,
         group       => $group
+      }
+
+      if $active == true {
+        file { $php_file:
+          ensure  => 'present',
+          content => template("oxid/oxid/php/module.erb"),
+          mode    => "0755",
+          owner   => $user,
+          group   => $group
+        } ->
+        oxid::php::runner { $php_file:
+          source  => $php_file,
+          user    => $user,
+          group   => $group,
+          require => Oxid::FileCheck[$name]
+        } ->
+        exec { "rm -f '${php_file}'": path => $oxid::params::path }
+      }
+
+      if $configurations != undef {
+        oxid::oxconfig { $name:
+          shop_dir       => $shop_dir,
+          shopid         => $shopid,
+          module         => $name,
+          configurations => $configurations,
+          type           => 'module',
+          require        => $active ? {
+            true    => Oxid::Php::Runner[$php_file],
+            default => Oxid::FileCheck[$name]
+          }
+        }
       }
     }
   }

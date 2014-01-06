@@ -1,3 +1,6 @@
+import "conf.pp"
+import "utils.pp"
+
 # Define: oxid::update
 #
 # This define update an existing Oxid instance.
@@ -93,7 +96,7 @@ define oxid::update (
   $htaccess_extra_replacements = {
   }
   ,
-  $owner            = $apache::params::user,
+  $user             = $apache::params::user,
   $group            = $apache::params::group,
   $source           = undef,
   $repository       = $oxid::params::default_repository,
@@ -136,7 +139,7 @@ define oxid::update (
   oxid::fileCheck { $name:
     shop_dir    => $shop_dir,
     compile_dir => $compile_dir,
-    owner       => $owner,
+    owner       => $user,
     group       => $group,
     refreshonly => true
   }

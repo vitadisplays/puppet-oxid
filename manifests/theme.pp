@@ -1,22 +1,65 @@
+# Define: oxid::theme
+#
+# This define install and activate an oxid theme.
+#
+# This used a php script, using bootstrap.php, in the shop directory to activate the theme.
+#
+# Parameters:
+#
+#   - ensure              present or absen. Default is present.
+#   - repository          The repository to get from
+#   - source              The location of the setup archive in the defined repository. For output mapping use a hash, like {
+#   "index.php" => "OXID_ESHOP_CE_CURRENT.zip"}. This will download index.php to download file OXID_ESHOP_CE_CURRENT.zip. Helpfully
+#   to download from oxid default location.
+#   - shopid              Shop id, Used for Enterprise Editions. Default is oxbase.
+#   - active              If true, activate theme. Default is true.
+#   - shop_dir            The oxid shop directroy.
+#   - compile_dir         The oxid compile directroy
+#   - configurations      Hash configurations options. See define oxid::oxconfig for more details.
+#   - user                The owner of the directories
+#   - group               The group of the directories
+#   - copy_map            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'    => '', 'changed_full/' => '' } for oxid default structure.
+#   - files               Array of files/directories to delete. Only used if ensure => 'absent'.
+#   - default_theme       Default theme name, to activate, if ensure => 'absent'.
+# 
+# Actions:
+#   - Download and install theme
+#   - activate theme
+#   - Configure theme
+#   - Check File permission, owner and group
+#
+# Requires:
+#   - Repository
+#   - Apache instance
+#   - MySQL Server instance
+#   - PHP
+#   - Configured oxid shop
+#
+# Sample Usage:
+#   oxid::theme {'azure':
+#      shopid  => 1,
+#      shop_dir => "/srv/www/oxid",
+#      compile_dir => "/srv/www/oxid/tmp",
+#      configurations =>  {
+#       'confbools'     => {
+#        'bl_showOpenId' => false
+#       }
+#    }
+#  }
 define oxid::theme (
-  $active        = true,
-  $shop_dir      = $oxid::params::shop_dir,
-  $compile_dir   = $oxid::params::compile_dir,
-  $owner         = $apache::params::user,
-  $group         = $apache::params::group,
-  $shopid        = $oxid::params::default_shopid,
-  $source        = undef,
-  $repository    = undef,
-  $class_mapping = undef,
-  $copy_map      = undef,
-  $files         = undef,
-  $ensure        = "present",
-  $host          = $oxid::params::db_host,
-  $port          = $oxid::params::db_port,
-  $db            = $oxid::params::db_name,
-  $user          = $oxid::params::db_user,
-  $password      = $oxid::params::db_password,
-  $config_key    = $oxid::params::config_key) {
+  $active         = true,
+  $shop_dir       = $oxid::params::shop_dir,
+  $compile_dir    = $oxid::params::compile_dir,
+  $user           = $apache::params::user,
+  $group          = $apache::params::group,
+  $shopid         = $oxid::params::default_shopid,
+  $source         = undef,
+  $repository     = undef,
+  $copy_map       = undef,
+  $files          = undef,
+  $ensure         = "present",
+  $default_theme  = "azure",
+  $configurations = undef) {
   validate_bool($active)
   validate_string($name)
   validate_re($ensure, ["^present$", "^installed$", "^absent$", "^deleted$"])
@@ -31,51 +74,69 @@ define oxid::theme (
     $delete_cmd = "rm -r -f ${shop_dir}/out/${name}"
   }
 
+  $php_file = inline_template("<%= File.join(@shop_dir, (0...32).map{ ('a'..'z').to_a[rand(26)] }.join + '_theme.php') %>")
+
   case $ensure {
     /absent|deleted/    : {
-      if is_string($name) {
-        exec { "rm -r -f '${shop_dir}/out/${name}'":
-          path   => $oxid::params::path,
-          onlyif => "test -d '${shop_dir}/out/${name}'"
-        }
+      validate_string($name)
+
+      exec { "rm -r -f '${shop_dir}/out/${name}'":
+        path   => $oxid::params::path,
+        onlyif => "test -d '${shop_dir}/out/${name}'"
       }
     }
 
     /present|installed/ : {
-      oxid::unpack_theme { $name:
-        destination => $shop_dir,
-        source      => $source,
-        repository  => $repository,
-        copy_map    => $copy_map
-      } -> oxid::fileCheck { $name:
-        shop_dir    => $shop_dir,
-        compile_dir => $compile_dir,
-        owner       => $owner,
-        group       => $group
-      }
-
-      if $active == true {
-        oxid::config { $name:
-          shopid   => 1,
-          host     => $host,
-          port     => $port,
-          db       => $db,
-          user     => $user,
-          password => $password,
-          configs  => {
-            "sTheme" => $name
-          }
-          ,
-          require  => Oxid::Unpack_theme[$name]
+      if $source != undef {
+        oxid::unpack_theme { $name:
+          destination => $shop_dir,
+          source      => $source,
+          repository  => $repository,
+          copy_map    => $copy_map
         }
 
-        replace { "${name}: configure ${shop_dir}/config.inc.php":
-          file        => "${shop_dir}/config.inc.php",
-          pattern     => "\$this->sTheme[ ]*=[ ]*.*;",
-          replacement => "\$this->sTheme = '${name}';",
-          notify      => Oxid::FileCheck[$name]
+        oxid::fileCheck { $name:
+          shop_dir    => $shop_dir,
+          compile_dir => $compile_dir,
+          owner       => $user,
+          group       => $group
         }
+
+        Oxid::Unpack_theme[$name] -> Oxid::FileCheck[$name] -> File[$php_file]
       }
+    }
+  }
+
+  if $active {
+    $theme = $name
+  } else {
+    $theme = $default_theme
+  }
+
+  file { $php_file:
+    ensure  => 'present',
+    content => template("oxid/oxid/php/theme.erb"),
+    mode    => "0755",
+    owner   => $user,
+    group   => $group
+  } ->
+  oxid::php::runner { $php_file: source => $php_file } ->
+  exec { "rm -f '${php_file}'": path => $oxid::params::path } ->
+  # ## For pre oxid 4.5.x
+  replace { "${name}: configure ${shop_dir}/config.inc.php":
+    file        => "${shop_dir}/config.inc.php",
+    pattern     => "\$this->sTheme[ ]*=[ ]*.*;",
+    replacement => "\$this->sTheme = '${theme}';"
+  }
+
+  if $configurations != undef {
+    oxid::oxconfig { $name:
+      shop_dir       => $shop_dir,
+      shopid         => $shopid,
+      module         => $name,
+      configurations => $configurations,
+      type           => 'theme',
+      require        => [Oxid::Php::Runner[$php_file], Replace["${name}: configure ${shop_dir}/config.inc.php"]]
     }
   }
 }
