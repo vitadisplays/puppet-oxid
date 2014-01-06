@@ -68,7 +68,9 @@ function _serializeConfVar($sType, $sName, $mValue)
             break;
 
         case "aarr":
-            $sData = _multilineToAarray( $mValue );
+        	if ( !is_array( $mValue ) ) {
+            	$sData = _multilineToAarray( $mValue );
+            }
             break;
     }
     return $sData;
@@ -120,7 +122,44 @@ if (file_exists(getShopBasePath().'bootstrap.php')) {
         exit($oEx);
     }
 } else {
-	exit('No bootstrap.php found.');
+	require_once getShopBasePath()."core/oxfunctions.php";
+	require_once getShopBasePath()."core/oxsupercfg.php"; 
+	require_once getShopBasePath()."core/oxconfig.php";
+	
+	try {
+		$_aConfParams = array(
+	        "bool"   => 'confbools',
+	        "str"    => 'confstrs',
+	        "arr"    => 'confarrs',
+	        "aarr"   => 'confaarrs'
+	    );
+	    
+	    $myConfig = oxConfig::getInstance();
+	
+	    $sShopId = '<%= @shopid %>';    
+	    
+	    $aConfigurations = json_decode('<%= @json_configurations %>', true);
+	    
+	    foreach ($_aConfParams as $sType => $sParam) {
+	    	if (isset($aConfigurations[$sParam])) {
+		        $aConfVars = $aConfigurations[$sParam];
+		        if (is_array($aConfVars)) {
+		            foreach ( $aConfVars as $sName => $sValue ) {
+		                $myConfig->saveShopConfVar(
+		                        $sType,
+		                        $sName,
+		                        _serializeConfVar($sType, $sName, ('<%= @ensure %>' == 'present' ? $sValue : '')),
+		                        $sShopId
+		                );            
+		            }
+		        }
+	        }
+	    }
+	    
+	    oxUtils::getInstance()->rebuildCache();
+    } catch (oxException $oEx) {
+        exit($oEx);
+    }
 }
 
 exit(0);
