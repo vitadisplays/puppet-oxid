@@ -1,6 +1,6 @@
 import "conf.pp"
 import "utils.pp"
-import "remote-utils.pp"
+import "remoteUtils.pp"
 import "php/zendguardloader.pp"
 
 # Class: oxid
@@ -107,10 +107,8 @@ class oxid (
   include ::oxid::apache::params
   include oxid::mysql::params
 
-  Oxid::Repository::Config::File <| |> -> Class[oxid]
-  Oxid::Repository::Config::Wget <| |> -> Class[oxid]
-  Class[oxid] -> Oxid::Theme <| |>
-  Class[oxid] -> Oxid::Module <| |>
+  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[oxid] -> Oxid::ShopConfig <| |> -> 
+  Oxid::Theme <| |> -> Oxid::Module <| |>
 
   if defined(Class['mysql::server']) {
     Class['mysql::server'] -> Oxid::Mysql::Dropdb["${name}: drop database"]

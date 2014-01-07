@@ -1,9 +1,10 @@
 <?php
+ini_set('display_errors', 1);
 
 define('OX_IS_ADMIN', 1);
 
 if (!defined('OX_BASE_PATH')) {
-    define('OX_BASE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR );
+	define('OX_BASE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR );
 }
 
 if ( !function_exists( 'getShopBasePath' )) {
@@ -13,27 +14,98 @@ if ( !function_exists( 'getShopBasePath' )) {
 }
 
 if (file_exists(getShopBasePath().'bootstrap.php')) {
-	require_once getShopBasePath() . "bootstrap.php";
-
-	$sModule = '<%= @name %>';
-    $oModule = oxNew('oxModule');
-    
-    if (!$oModule->load($sModule)) {
-    	exit(-1);
-    }
-    
-    try {
-        if ( $oModule-><%= @command %>() ) {
-            $this->_aViewData["updatenav"] = "1";
-            
-            $oCache = oxNew( 'oxcache' );
-       		$oCache->reset();
-        }
-    } catch (oxException $oEx) {
-        exit(-1);
-    }
-} else {
-	exit(-2);
+	try {
+		require_once getShopBasePath() . "bootstrap.php";
+		
+		$sModule = '<%= @name %>';
+		$oModule = oxNew('oxModule');
+		
+		if (!$oModule->load($sModule)) {
+			echo "Can not load module ${sModule}.";
+			exit("Can not load module ${sModule}.");
+		}	    
+		
+		if ( $oModule-><%= @command %>() ) {
+			$this->_aViewData["updatenav"] = "1";
+			
+			$oCache = oxNew( 'oxcache' );
+			$oCache->reset();
+		}
+	} catch (Exception $oEx) {
+		echo $oEx->message;
+		exit($oEx->message);
+	} 
+} else if('<%= @json_class_mapping %>' != '') {	
+	try {
+		if ( !function_exists( 'isAdmin' )) {
+			function isAdmin() { 
+				return true; 
+			} 
+		}
+		
+		function _mutipleToString($a) {
+			return implode(';', $a);
+		}
+		
+		require_once getShopBasePath()."core/oxfunctions.php";
+		require_once getShopBasePath()."core/oxsupercfg.php"; 
+		require_once getShopBasePath()."core/oxconfig.php";
+		require_once getShopBasePath()."core/oxdb.php";
+					
+		$myConfig = oxConfig::getInstance();
+		$sShopId = '<%= @shopid %>';		
+		$sShopId = $sShopId == '' ? ($myConfig->getEdition() == 'EE' ? 1 : 'oxbase') : $sShopId;
+		$aConfigurations = json_decode('<%= @json_configurations %>', true);
+		$aMapping = json_decode('<%= @json_class_mapping %>', true);
+		
+		if (!is_array($aMapping)) {
+			exit("class_mapping is not an array.");
+		}
+		
+		if (count($aMapping) > 0) {
+			$oDb = oxDb::getDb();
+			$sModulesRaw = $oDb->getOne("select DECODE( oxvarvalue, ".$oDb->quote( $myConfig->getConfigParam( 'sConfigKey' ) ).") as oxvarvalue from oxconfig where oxshopid = '$sShopId' and oxvarname = 'aModules'");
+			
+			$aModules = array();
+			
+			if ($sModulesRaw) {        
+				$aModules = unserialize( $sModulesRaw );
+			}			
+			
+			foreach($aModules as $sKey => $sValue) {				
+				$aModules[$sKey] = array_map('trim',explode(';', $sValue));
+			}
+			
+			foreach($aMapping as $sKey => $aValues) {
+				$aClassNames = $aValues;
+				
+				if (!is_array($aValues)) {
+					$aClassNames = array($aValues);
+				}
+				
+				if (!isset($aModules[$sKey]) || '<%= @command %>' == 'override') {
+					$aModules[$sKey] = $aClassNames;
+				} else if (isset($aModules[$sKey])) {
+					if ('<%= @command %>' == 'deactivate') {
+						$aModules[$sKey] = array_diff($aModules[$sKey], $aClassNames);
+						
+						if (count($aModules[$sKey]) == 0) {
+							unset($aModules[$sKey]);
+						}
+					} else if ('<%= @command %>' == 'activate') {
+						$aModules[$sKey] = array_merge($aModules[$sKey], $aClassNames);
+					}
+				}
+			}
+			
+			$aModules = array_map("_mutipleToString", $aModules);
+			
+			$myConfig->saveShopConfVar('aarr', 'aModules', $aModules, $sShopId);
+		}
+	} catch (Exception $oEx) {
+		echo $oEx->message;
+		exit($oEx->message);
+	}
 }
 
 exit(0);

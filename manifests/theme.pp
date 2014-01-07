@@ -47,7 +47,6 @@
 #    }
 #  }
 define oxid::theme (
-  $active         = true,
   $shop_dir       = $oxid::params::shop_dir,
   $compile_dir    = $oxid::params::compile_dir,
   $user           = $apache::params::user,
@@ -57,13 +56,12 @@ define oxid::theme (
   $repository     = undef,
   $copy_map       = undef,
   $files          = undef,
-  $ensure         = "present",
+  $ensure         = "activated",
   $default_theme  = "azure",
   $configurations = undef) {
-  validate_bool($active)
   validate_string($name)
-  validate_re($ensure, ["^present$", "^installed$", "^absent$", "^deleted$"])
-
+  validate_re($ensure, ["^activated$", "^installed$","^deactivated$", "^purged$"])
+  
   if $files != undef {
     validate_array($files)
 
@@ -77,7 +75,7 @@ define oxid::theme (
   $php_file = inline_template("<%= File.join(@shop_dir, (0...32).map{ ('a'..'z').to_a[rand(26)] }.join + '_theme.php') %>")
 
   case $ensure {
-    /absent|deleted/    : {
+    /purged/    : {
       validate_string($name)
 
       exec { "rm -r -f '${shop_dir}/out/${name}'":
@@ -86,7 +84,7 @@ define oxid::theme (
       }
     }
 
-    /present|installed/ : {
+    /activated|installed/ : {
       if $source != undef {
         oxid::unpack_theme { $name:
           destination => $shop_dir,
@@ -107,7 +105,7 @@ define oxid::theme (
     }
   }
 
-  if $active {
+  if $ensure == 'activated' {
     $theme = $name
   } else {
     $theme = $default_theme

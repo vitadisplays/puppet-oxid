@@ -1,9 +1,10 @@
 <?php
+ini_set('display_errors', 1);
 
 define('OX_IS_ADMIN', 1);
 
 if (!defined('OX_BASE_PATH')) {
-    define('OX_BASE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR );
+	define('OX_BASE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR );
 }
 
 if ( !function_exists( 'getShopBasePath' )) {
@@ -12,29 +13,40 @@ if ( !function_exists( 'getShopBasePath' )) {
 	} 
 }
 
-if (file_exists(getShopBasePath().'bootstrap.php')) {
-	require_once getShopBasePath() . "bootstrap.php";
-	
-	$oMetaData = oxNew('oxDbMetaDataHandler');
-	
-	$ret = true;
-	
-	for ($i = 0; $i < 4; $i++) {
-		if(!$oMetaData->updateViews()) {
-			$ret = false;
+try {
+	if (file_exists(getShopBasePath().'bootstrap.php')) {
+		require_once getShopBasePath() . "bootstrap.php";
+		
+		$oMetaData = oxNew('oxDbMetaDataHandler');
+		
+		$ret = true;
+		
+		for ($i = 0; $i < 4; $i++) {
+			if(!$oMetaData->updateViews()) {
+				$ret = false;
+			}
 		}
+		
+		if (!$ret) {
+			echo "Update Views(5) failed.";
+			exit("Update Views(5) failed.");
+		}		
+	} else {
+		if ( !function_exists( 'isAdmin' )) {
+			function isAdmin() { 
+				return true; 
+			} 
+		}	
+		
+		require_once getShopBasePath()."core/oxfunctions.php";
+		require_once getShopBasePath()."core/oxsupercfg.php"; 
+		require_once getShopBasePath()."core/oxdb.php";
+		
+		oxDb::getInstance()->updateViews();
 	}
-	exit($ret ? 0 : "Update Views(5) failed.");
-} else {
-	if ( !function_exists( 'isAdmin' )) {
-		function isAdmin() { 
-			return true; 
-		} 
-	}	
-	
-	require_once getShopBasePath()."core/oxfunctions.php";
-	require_once getShopBasePath()."core/oxsupercfg.php"; 
-	require_once getShopBasePath()."core/oxdb.php";
-	
-	exit(oxDb::getInstance()->updateViews() ? 0 : "Update Views(4) failed.");
+} catch (Exception $oEx) {
+	echo $oEx->message;
+	exit($oEx->message);
 }
+
+exit(0);

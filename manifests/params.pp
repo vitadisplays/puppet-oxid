@@ -23,7 +23,7 @@ class oxid::params {
   $mysql_user = "root"
   $mysql_password = ""
 
-  $default_shopid = 'oxbase'
+  $default_shopid = ''
   $config_key = 'fq45QS09_fqyx09239QQ'
 
   $apache_mods = ['vhost_alias', 'php5', 'rewrite', 'headers']

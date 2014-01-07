@@ -1,9 +1,14 @@
 <?php
+ini_set('display_errors', 1);
+
+if ('<%= @json_configurations %>' == '') {
+	exit(0);
+}
 
 define('OX_IS_ADMIN', 1);
 
 if (!defined('OX_BASE_PATH')) {
-    define('OX_BASE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR );
+	define('OX_BASE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR );
 }
 
 if ( !function_exists( 'getShopBasePath' )) {
@@ -14,152 +19,158 @@ if ( !function_exists( 'getShopBasePath' )) {
 
 function _multilineToArray( $sMultiline )
 {
-    $aArr = explode( "\n", $sMultiline );
-    if ( is_array( $aArr ) ) {
-        foreach ( $aArr as $sKey => $sVal ) {
-            $aArr[$sKey] = trim( $sVal );
-            if ( $aArr[$sKey] == "" ) {
-                unset( $aArr[$sKey] );
-            }
-        }
-        return $aArr;
-    }
+	$aArr = explode( "\n", $sMultiline );
+	if ( is_array( $aArr ) ) {
+		foreach ( $aArr as $sKey => $sVal ) {
+			$aArr[$sKey] = trim( $sVal );
+			if ( $aArr[$sKey] == "" ) {
+				unset( $aArr[$sKey] );
+			}
+		}
+		return $aArr;
+	}
 }
-    
+
 function _multilineToAarray( $sMultiline )
 {
-    $oStr = getStr();
-    $aArr = array();
-    $aLines = explode( "\n", $sMultiline );
-    foreach ( $aLines as $sLine ) {
-        $sLine = trim( $sLine );
-        if ( $sLine != "" && $oStr->preg_match( "/(.+)=>(.+)/", $sLine, $aRegs ) ) {
-            $sKey = trim( $aRegs[1] );
-            $sVal = trim( $aRegs[2] );
-            if ( $sKey != "" && $sVal != "" ) {
-                $aArr[$sKey] = $sVal;
-            }
-        }
-    }
+	$oStr = getStr();
+	$aArr = array();
+	$aLines = explode( "\n", $sMultiline );
+	foreach ( $aLines as $sLine ) {
+		$sLine = trim( $sLine );
+		if ( $sLine != "" && $oStr->preg_match( "/(.+)=>(.+)/", $sLine, $aRegs ) ) {
+			$sKey = trim( $aRegs[1] );
+			$sVal = trim( $aRegs[2] );
+			if ( $sKey != "" && $sVal != "" ) {
+				$aArr[$sKey] = $sVal;
+			}
+		}
+	}
 
-    return $aArr;
+	return $aArr;
 }
-        
+
 function _serializeConfVar($sType, $sName, $mValue)
 {
-    $sData = $mValue;
+	$_aParseFloat = array('iMinOrderPrice');
+	
+	$sData = $mValue;
 
-    switch ($sType) {
-        case "bool":
-            break;
+	switch ($sType) {
+	case "bool":
+		break;
 
-        case "str":
-        case "select":
-        case "int":
-            if (in_array($sName, $this->_aParseFloat)) {
-                $sData = str_replace( ',', '.', $sData );
-            }
-            break;
+	case "str":
+	case "select":
+	case "int":
+		if (in_array($sName, $_aParseFloat)) {
+			$sData = str_replace( ',', '.', $sData );
+		}
+		break;
 
-        case "arr":
-            if ( !is_array( $mValue ) ) {
-                $sData = _multilineToArray( $mValue );
-            }
-            break;
+	case "arr":
+		if ( !is_array( $mValue ) ) {
+			$sData = _multilineToArray( $mValue );
+		}
+		break;
 
-        case "aarr":
-        	if ( !is_array( $mValue ) ) {
-            	$sData = _multilineToAarray( $mValue );
-            }
-            break;
-    }
-    return $sData;
+	case "aarr":
+		if ( !is_array( $mValue ) ) {
+			$sData = _multilineToAarray( $mValue );
+		}
+		break;
+	}
+	return $sData;
 }
-    
-if (file_exists(getShopBasePath().'bootstrap.php')) {
+
+if (file_exists(getShopBasePath().'bootstrap.php')) {	
 	require_once getShopBasePath() . "bootstrap.php";
 	try {
 		$_aConfParams = array(
-	        "bool"   => 'confbools',
-	        "str"    => 'confstrs',
-	        "arr"    => 'confarrs',
-	        "aarr"   => 'confaarrs',
-	        "select" => 'confselects',
-	        "num"    => 'confnum',
-	    );
+		"bool"   => 'confbools',
+		"str"    => 'confstrs',
+		"arr"    => 'confarrs',
+		"aarr"   => 'confaarrs',
+		"select" => 'confselects',
+		"num"    => 'confnum',
+		);
+		
+		$myConfig = oxRegistry::getConfig();
+		$sShopId = '<%= @shopid %>';		
+		$sShopId = $sShopId == '' ? ($myConfig->getEdition() == 'EE' ? 1 : 'oxbase') : $sShopId;
+		$aConfigurations = json_decode('<%= @json_configurations %>', true);
 	    
-	    $myConfig = oxRegistry::getConfig();
-	
-	    $sShopId = '<%= @shopid %>';	    
-	    switch('<%= @type %>') {
-	    	case 'theme' : $sModule = oxConfig::OXMODULE_THEME_PREFIX.'<%= @module %>'; break;
-	    	case 'module' : $sModule = oxConfig::OXMODULE_MODULE_PREFIX.'<%= @module %>'; break;
-	    	default: $sModule = '<%= @module %>'; break;
-	    }	    
-	    
-	    $aConfigurations = json_decode('<%= @json_configurations %>', true);
-	    
-	    foreach ($_aConfParams as $sType => $sParam) {
-	    	if (isset($aConfigurations[$sParam])) {
-		        $aConfVars = $aConfigurations[$sParam];
-		        if (is_array($aConfVars)) {
-		            foreach ( $aConfVars as $sName => $sValue ) {
-		                $myConfig->saveShopConfVar(
-		                        $sType,
-		                        $sName,
-		                        _serializeConfVar($sType, $sName, ('<%= @ensure %>' == 'present' ? $sValue : '')),
-		                        $sShopId,
-		                        $sModule
-		                );            
-		            }
-		        }
-	        }
-	    }
-	    
-	    $oCache = oxNew( 'oxcache' );
-	    $oCache->reset();
-    } catch (oxException $oEx) {
-        exit($oEx);
-    }
+		switch('<%= @type %>') {
+		case 'theme' : $sModule = oxConfig::OXMODULE_THEME_PREFIX.'<%= @module %>'; break;
+		case 'module' : $sModule = oxConfig::OXMODULE_MODULE_PREFIX.'<%= @module %>'; break;
+		default: $sModule = '<%= @module %>'; break;
+		}	    
+		
+		foreach ($_aConfParams as $sType => $sParam) {
+			if (isset($aConfigurations[$sParam])) {
+				$aConfVars = $aConfigurations[$sParam];
+				if (is_array($aConfVars)) {
+					foreach ( $aConfVars as $sName => $sValue ) {
+						$myConfig->saveShopConfVar(
+						$sType,
+						$sName,
+						_serializeConfVar($sType, $sName, ('<%= @ensure %>' == 'present' ? $sValue : '')),
+						$sShopId,
+						$sModule
+						);            
+					}
+				}
+			}
+		}
+		
+		$oCache = oxNew( 'oxcache' );
+		$oCache->reset();
+	} catch (Exception $oEx) {
+		echo $oEx->message;
+		exit($oEx->message);
+	}    
 } else {
-	require_once getShopBasePath()."core/oxfunctions.php";
-	require_once getShopBasePath()."core/oxsupercfg.php"; 
-	require_once getShopBasePath()."core/oxconfig.php";
-	
 	try {
+		if ( !function_exists( 'isAdmin' )) {
+			function isAdmin() { 
+				return true; 
+			} 
+		}
+			
+		require_once getShopBasePath()."core/oxfunctions.php";
+		require_once getShopBasePath()."core/oxsupercfg.php"; 
+		require_once getShopBasePath()."core/oxconfig.php";	
+		
 		$_aConfParams = array(
-	        "bool"   => 'confbools',
-	        "str"    => 'confstrs',
-	        "arr"    => 'confarrs',
-	        "aarr"   => 'confaarrs'
-	    );
-	    
-	    $myConfig = oxConfig::getInstance();
-	
-	    $sShopId = '<%= @shopid %>';    
-	    
-	    $aConfigurations = json_decode('<%= @json_configurations %>', true);
-	    
-	    foreach ($_aConfParams as $sType => $sParam) {
-	    	if (isset($aConfigurations[$sParam])) {
-		        $aConfVars = $aConfigurations[$sParam];
-		        if (is_array($aConfVars)) {
-		            foreach ( $aConfVars as $sName => $sValue ) {
-		                $myConfig->saveShopConfVar(
-		                        $sType,
-		                        $sName,
-		                        _serializeConfVar($sType, $sName, ('<%= @ensure %>' == 'present' ? $sValue : '')),
-		                        $sShopId
-		                );            
-		            }
-		        }
-	        }
-	    }
-	    
-	    oxUtils::getInstance()->rebuildCache();
-    } catch (oxException $oEx) {
-        exit($oEx);
-    }
+		"bool"   => 'confbools',
+		"str"    => 'confstrs',
+		"arr"    => 'confarrs',
+		"aarr"   => 'confaarrs',
+		"str" => 'confselects',
+		"str"    => 'confnum',
+		);
+		
+		$myConfig = oxConfig::getInstance(); 
+		$sShopId = '<%= @shopid %>';		
+		$sShopId = $sShopId == '' ? ($myConfig->getEdition() == 'EE' ? 1 : 'oxbase') : $sShopId;
+		$aConfigurations = json_decode('<%= @json_configurations %>', true);
+		
+		foreach ($_aConfParams as $sType => $sParam) {
+			if (isset($aConfigurations[$sParam])) {
+				$aConfVars = $aConfigurations[$sParam];
+				if (is_array($aConfVars)) {
+					foreach ( $aConfVars as $sName => $sValue ) {
+						$myConfig->saveShopConfVar($sType, $sName, _serializeConfVar($sType, $sName, ('<%= @ensure %>' == 'present' ? $sValue : '')), $sShopId);            
+					}
+				}
+			}
+		}
+		
+		oxUtils::getInstance()->rebuildCache();
+	} catch (Exception $oEx) {
+		echo $oEx->message;
+		exit($oEx->message);
+	}
 }
 
 exit(0);

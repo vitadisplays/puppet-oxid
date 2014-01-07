@@ -112,8 +112,8 @@ define oxid::update (
   include ::oxid::apache::params
   include oxid::mysql::params
 
-  Oxid::Repository::Config::File <| |> -> Oxid::Update[$name] -> Oxid::Theme <| |>
-  Oxid::Repository::Config::Wget <| |> -> Oxid::Update[$name] -> Oxid::Module <| |>
+  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |> -> Oxid::ShopConfig <| |> -> 
+  Oxid::Theme <| |> -> Oxid::Module <| |>
 
   validate_re($copy_this, ['^before$', '^after$', '^never$'], "Only before, after or never for copy_this parameter are supported.")
   validate_re($changed_full, ['^before$', '^after$', '^never$'], "Only before, after or never for changed_full parameter are supported."
