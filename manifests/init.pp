@@ -1,5 +1,6 @@
 import "conf.pp"
 import "utils.pp"
+import "updateViews.pp"
 import "remoteUtils.pp"
 import "php/zendguardloader.pp"
 

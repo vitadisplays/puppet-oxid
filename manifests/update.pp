@@ -1,5 +1,6 @@
 import "conf.pp"
 import "utils.pp"
+import "updateViews.pp"
 
 # Define: oxid::update
 #
