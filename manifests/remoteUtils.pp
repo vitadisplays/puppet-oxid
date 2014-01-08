@@ -184,8 +184,8 @@ define oxid::sshFetchRemoteData (
 #    remote_db_name => "oxid",
 #    remote_db_user => "oxid",
 #    remote_db_password => "secret",
-#    dump_tables => $(mysql --user='oxid' --password='secret' -B -N -e \"Select TABLE_NAME FROM information_schema.TABLES WHERE
-#    TABLE_SCHEMA = '\''oxid'\'' AND TABLE_TYPE != '\''VIEW'\''\" | grep -v Tables_in | xargs),
+#    dump_tables => "$(mysql --user='oxid' --password='secret' -B -N -e \"Select TABLE_NAME FROM information_schema.TABLES WHERE
+#    TABLE_SCHEMA = '\\''oxid'\\'' AND TABLE_TYPE != '\\''VIEW'\\''\" | grep -v Tables_in | xargs)",
 #    dump_options => $oxid::params::default_remote_dump_options_latin1,
 #  }
 #

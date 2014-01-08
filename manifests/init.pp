@@ -127,6 +127,10 @@ class oxid (
     Exec["${name}: make dir ${shop_dir}"] -> Apache::Vhost <| |>
   }
 
+  if defined(Service['httpd']) {
+    Class[oxid] ~> Service['httpd']
+  }
+  
   oxid::fileCheck { $name:
     shop_dir    => $shop_dir,
     compile_dir => $compile_dir,

@@ -28,16 +28,9 @@ class oxid::php::zendguardloader (
     Class['apache::mod::php'] -> Oxid::Php::Zendguardloader <| |>
   }
 
-  /*if $version == undef {
-    exec { "php --version | grep -E -o 'PHP[ ]*([0-9]*\\.[0-9]*\\.[0-9]*)' | awk '{print \$2}' > '/tmp/php-short-version.txt'":
-      path   => $oxid::params::path,
-      before => Oxid::Repository::Get[$name]
-    }
-
-    $php_version = file('/tmp/php-short-version.txt')
-  } else {
-    $php_version = $version
-  }*/
+  if defined(Service['httpd']) {
+    Class[oxid::php::zendguardloader] ~> Service['httpd']
+  }
 
   $downloads = {
     "5.2-i386"   => "optimizer/3.3.9/ZendOptimizer-3.3.9-linux-glibc23-i386.tar.gz",
@@ -91,7 +84,6 @@ class oxid::php::zendguardloader (
     source  => $ini_source ? {
       undef   => undef,
       default => $ini_source
-    },
-    notify  => Service[$oxid::apache::params::service_name]
+    }
   }
 }
