@@ -157,7 +157,7 @@ define oxid::sshFetchRemoteData (
 #
 # Actions:
 #   - fetch sql dump via ssh
-#   - Store content to an archive
+#   - Store content to an backup directory
 #
 # Requires:
 #   - Repository
@@ -172,10 +172,26 @@ define oxid::sshFetchRemoteData (
 #    remote_db_name => "oxid",
 #    remote_db_user => "oxid",
 #    remote_db_password => "secret",
-#    dump_tables => ["$(mysql --user='oxid' --password='secret' -B -N -e \"Select TABLE_NAME FROM information_schema.TABLES WHERE
-#    TABLE_SCHEMA = 'oxid' AND TABLE_TYPE != 'VIEW' AND TABLE_NAME NOT IN('oxadminlog')\" | grep -v Tables_in | xargs)"],
+#  }
+#
+# Dump all tables. using default dump_options (utf8). See class oxid::params for more details.
+#
+#  oxid::sshFetchRemoteSQL {"root@myremotehostname":
+#    db_name => "oxid",
+#    db_user => "oxid",
+#    db_password => "secret",
+#    ssh_ident_content => file("path to private key"),
+#    remote_db_name => "oxid",
+#    remote_db_user => "oxid",
+#    remote_db_password => "secret",
+#    dump_tables => $(mysql --user='oxid' --password='secret' -B -N -e \"Select TABLE_NAME FROM information_schema.TABLES WHERE
+#    TABLE_SCHEMA = '\''oxid'\'' AND TABLE_TYPE != '\''VIEW'\''\" | grep -v Tables_in | xargs),
 #    dump_options => $oxid::params::default_remote_dump_options_latin1,
 #  }
+#
+# Dump all tables using latin1 charset and exluding all Views. Nice sample for oxid Enterprise Edition use, to avoid mysql view
+# table import.
+#
 define oxid::sshFetchRemoteSQL (
   $db_name            = $oxid::params::db_name,
   $db_user            = $oxid::params::db_user,
@@ -192,7 +208,7 @@ define oxid::sshFetchRemoteSQL (
     '-C',
     '-o StrictHostKeyChecking=no'],
   $ssh_ident_content,
-  $dump_tables        = [],
+  $dump_tables        = undef,
   $dump_options       = $oxid::params::default_remote_dump_options_utf8,
   $timeout            = 18000,
   $compression        = 'gzip',
@@ -205,10 +221,24 @@ define oxid::sshFetchRemoteSQL (
     Oxid::Conf["oxid"] ~> Oxid::SshFetchRemoteSQL[$name]
   }
 
-  $dump_options_str = join(unique($dump_options), ' ')
-  $dump_tables_str = is_array($dump_tables) ? {
-    true    => shellquote(unique($dump_tables)),
-    default => $dump_tables
+  if $dump_options == undef {
+    $dump_options_str = ''
+  } elsif is_array($dump_options) == true {
+    $dump_options_str = join(unique($dump_options), ' ')
+  } else {
+    validate_string($dump_options)
+
+    $dump_options_str = $dump_options
+  }
+
+  if $dump_tables == undef {
+    $dump_tables_str = ''
+  } elsif is_array($dump_tables) == true {
+    $dump_tables_str = shellquote(unique($dump_tables))
+  } else {
+    validate_string($dump_tables)
+
+    $dump_tables_str = $dump_tables
   }
 
   $tmp_dir = $oxid::params::tmp_dir
@@ -269,9 +299,8 @@ define oxid::sshFetchRemoteSQL (
       path    => $oxid::params::path,
       unless  => "test -d '${backup_dir}'"
     } ->
-    exec { "ssh ${$option_str} ${name} \"mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"******\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}\" > ${archive}"
+    exec { "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}"
     :
-      command => "ssh ${$option_str} ${name} \"mysqldump --host='${remote_db_host}' --port=${remote_db_port} --user='${remote_db_user}' --password='${remote_db_password}' ${dump_options_str} '${remote_db_name}' ${dump_tables_str} ${create_prg}\" > ${archive}",
       path    => $oxid::params::path,
       unless  => "test -f '${archive}'",
       timeout => $timeout,
@@ -290,8 +319,7 @@ define oxid::sshFetchRemoteSQL (
       notify      => defined(Oxid::UpdateViews["oxid"]) ? {
         true    => Oxid::UpdateViews["oxid"],
         default => undef
-      },
-      require     => Class["oxid::package::packer"]
+      }
     }
 
     if $purge {
@@ -303,9 +331,8 @@ define oxid::sshFetchRemoteSQL (
       }
     }
   } else {
-    exec { "ssh ${$option_str} ${name} \"mysqldump --host='${remote_db_host}' --port=${remote_db_port} --user='${remote_db_user}' --password='******' ${dump_options_str} '${remote_db_name}' ${dump_tables_str} ${create_prg}\" | mysql --host='${db_host}' --port=${db_port} --user='${db_user}' --password='${db_password}' '${db_name}'"
+    exec { "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' | mysql --host=\"${db_host}\" --port=${db_port} --user=\"${db_user}\" --password=\"${db_password}\" \"${db_name}\""
     :
-      command => "ssh ${$option_str} ${name} \"mysqldump --host='${remote_db_host}' --port=${remote_db_port} --user='${remote_db_user}' --password='${remote_db_password}' ${dump_options_str} '${remote_db_name}' ${dump_tables_str} ${create_prg}\" | mysql --host='${db_host}' --port=${db_port} --user='${db_user}' --password='${db_password}' '${db_name}'",
       path    => $oxid::params::path,
       timeout => $timeout,
       notify  => Exec["rm -f '${ident_file}'"],
