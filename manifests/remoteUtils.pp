@@ -265,7 +265,7 @@ define oxid::sshFetchRemoteSQL (
       path    => $oxid::params::path,
       unless  => "test -d '${backup_dir}'"
     } ->
-    exec { "${name}: remote mysqldump ${remote_db_name} ${dump_tables_str}":
+    exec { "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"******\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}":
       command => "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}",
       path    => $oxid::params::path,
       unless  => "test -f '${archive}'",
@@ -298,7 +298,7 @@ define oxid::sshFetchRemoteSQL (
       }
     }
   } else {
-    exec { "${name}: remote mysqldump ${remote_db_name} ${dump_tables_str}":
+    exec { "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"******\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' | mysql --host='${db_host}' --port=${db_port} --user='${db_user}' --password='${db_password}' '${db_name}'":
       command => "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' | mysql --host='${db_host}' --port=${db_port} --user='${db_user}' --password='${db_password}' '${db_name}'",
       path    => $oxid::params::path,
       timeout => $timeout,
