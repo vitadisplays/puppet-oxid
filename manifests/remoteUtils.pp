@@ -134,7 +134,8 @@ define oxid::sshFetchRemoteData (
 
     $includes_str = join(prefix(suffix($includes, "'"), "--include '"), ' ')
 
-    $commands = split(inline_template("<%= @includes.collect{|i| 'rsync -ravz -e \"ssh ' + @option_str + '\" \"' + @name + '\":\"' + File.join(@remote_dir, i) + '/\" \"' + File.join(@shop_dir, i) + '\" ; ' } %>"), ' ; ')
+    $commands = split(inline_template("<%= @includes.collect{|i| 'rsync -ravz -e \"ssh ' + @option_str + '\" \"' + @name + '\":\"' + File.join(@remote_dir, i) + '/\" \"' + File.join(@shop_dir, i) + '\" ; ' } %>"
+    ), ' ; ')
 
     exec { $commands:
       path    => $oxid::params::path,
@@ -196,7 +197,7 @@ define oxid::sshFetchRemoteSQL (
   $timeout            = 18000,
   $compression        = 'gzip',
   $purge              = true) {
-  validate_array($ssh_options, $dump_options, $dump_tables)
+  validate_array($ssh_options, $dump_options)
   validate_bool($purge)
   validate_re($name, '^.*@.*$')
 
@@ -205,7 +206,10 @@ define oxid::sshFetchRemoteSQL (
   }
 
   $dump_options_str = join(unique($dump_options), ' ')
-  $dump_tables_str = join(unique($dump_tables), ' ')
+  $dump_tables_str = is_array($dump_tables) ? {
+    true    => shellquote(unique($dump_tables)),
+    default => $dump_tables
+  }
 
   $tmp_dir = $oxid::params::tmp_dir
   $ident_file = inline_template("<%= File.join(@tmp_dir, (0...32).map{ ('a'..'z').to_a[rand(26)] }.join + '.private') %>")
@@ -265,8 +269,9 @@ define oxid::sshFetchRemoteSQL (
       path    => $oxid::params::path,
       unless  => "test -d '${backup_dir}'"
     } ->
-    exec { "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"******\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}":
-      command => "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}",
+    exec { "ssh ${$option_str} ${name} \"mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"******\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}\" > ${archive}"
+    :
+      command => "ssh ${$option_str} ${name} \"mysqldump --host='${remote_db_host}' --port=${remote_db_port} --user='${remote_db_user}' --password='${remote_db_password}' ${dump_options_str} '${remote_db_name}' ${dump_tables_str} ${create_prg}\" > ${archive}",
       path    => $oxid::params::path,
       unless  => "test -f '${archive}'",
       timeout => $timeout,
@@ -298,8 +303,9 @@ define oxid::sshFetchRemoteSQL (
       }
     }
   } else {
-    exec { "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"******\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' | mysql --host='${db_host}' --port=${db_port} --user='${db_user}' --password='${db_password}' '${db_name}'":
-      command => "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' | mysql --host='${db_host}' --port=${db_port} --user='${db_user}' --password='${db_password}' '${db_name}'",
+    exec { "ssh ${$option_str} ${name} \"mysqldump --host='${remote_db_host}' --port=${remote_db_port} --user='${remote_db_user}' --password='******' ${dump_options_str} '${remote_db_name}' ${dump_tables_str} ${create_prg}\" | mysql --host='${db_host}' --port=${db_port} --user='${db_user}' --password='${db_password}' '${db_name}'"
+    :
+      command => "ssh ${$option_str} ${name} \"mysqldump --host='${remote_db_host}' --port=${remote_db_port} --user='${remote_db_user}' --password='${remote_db_password}' ${dump_options_str} '${remote_db_name}' ${dump_tables_str} ${create_prg}\" | mysql --host='${db_host}' --port=${db_port} --user='${db_user}' --password='${db_password}' '${db_name}'",
       path    => $oxid::params::path,
       timeout => $timeout,
       notify  => Exec["rm -f '${ident_file}'"],
