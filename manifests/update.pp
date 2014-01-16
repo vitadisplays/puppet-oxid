@@ -6,45 +6,46 @@ import "updateViews.pp"
 #
 # This define update an existing Oxid instance.
 #
+# This define use the orginal config.inc.php and .htaccess if provided by the source archive and configure the files by replacing elements.
+# This allows you to configure all version of the config.inc.php and .htaccess provided by oxid.
+# If you don't need this feature, you can define your own config.inc.php and .htaccess source.
+#
+# The update Procces is default done by the run_cli.php script. This script will be extended that uses unanttended UI Classes.
+# Over the Answer parameter, you can define your Answers like ["1", "2", "1"]. Return Answers are handled by default.
+# Sometimes the run_cli.php script do not handle the SQL scripts well. In this case, use run_method => "sql", to run only the SQL Scripts directly by mysql.
+#
 # Parameters:
-#   - repository          The repository to get from
-#   - source            The location of the setup archive in the defined repository. For output mapping use a hash, like {
-#   "index.php" => "OXID_ESHOP_CE_CURRENT.zip"}. This will download index.php to download file OXID_ESHOP_CE_CURRENT.zip. Helpfully
-#   to download from oxid default location.
-#   - purge             If true, deletes the shop dir.
-#   - shop_dir            The oxid shop directroy
-#   - compile_dir         The oxid compile directroy
-#   - db_type           Default is mysql and is only supported type.
-#   - db_host           Oxid database host
-#   - db_name           Oxid database name
-#   - db_user           Oxid database user
-#   - db_password         Oxid database password
-#   - shop_url            Oxid shop url
-#   - shop_ssl_url          Oxid shop ssl url
-#   - admin_ssl_url         Oxid admin ssl url
-#   - rewrite_base          Rewrite Base in the .htaccess file
-#   - config_content        Your own oxyid configuration content
-#   - htaccess_content        Your own htaccess configuration content
-#   - config_source         Your own oxid configuration source
-#   - htaccess_source       Your own oxid htaccess source
-#   - config_extra_replacements   Extra replacements for oxid configuration. Example:
-#   {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }
-#   - htaccess_extra_replacements Extra replacements for htaccess
-#   - db_setup_sql          The setup file to execute. By default "setup/sql/database.sql"
-#   - extra_db_setup_sqls     Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For
-#   Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]
-#   - owner             The owner of the directories
-#   - group             The group of the directories
-#   - copy_this           before or after update process to copy all files from the copy_this directory to the shop directory. Use
-#   none to stop copy.
-#   - changed_full        before or after update process to copy all files from the xhanged_full directory to the shop directory.
-#   Use none to stop copy.
-#   - run_method          cli or sql. In the cli mode the run_cli.php will be executed and in sql mode only the sql files will be
-#   imported.
-#   - answers             Anwser array
-#   - fail_on_error       Some times some sql statments failed. to ignore this you can change the fail on error behaviour.
-#   - updateViews         If true, update all views
-#   - timeout       the timeout for the update process.
+#   - source                        The location of the setup archive in the defined repository. Required.
+#   - repository                    The repository to get from. Default is local file use.
+#   - shop_dir                      The oxid shop directroy. Default is "/srv/www/oxid"
+#   - compile_dir                   The oxid compile directroy. Default is "/srv/www/oxid/tmp"
+#   - db_type                       Default is mysql and is the only supported type.
+#   - db_host                       Oxid database host. Default "localhost".
+#   - db_name                       Oxid database name. Default "oxid".
+#   - db_user                       Oxid database user. Default "oxid".
+#   - db_password                   Oxid database password. Default "oxid".
+#   - shop_url                      Oxid shop url. Default "http://${hostname}"
+#   - shop_ssl_url                  Oxid shop ssl url. Default is undef.
+#   - admin_ssl_url                 Oxid admin ssl url. Default is undef.
+#   - utf8_mode                     Oxid UTF8 Mode. 0 for latin1 and 1 for UTF8. Default is 0.
+#   - rewrite_base                  Rewrite Base in the .htaccess file. Default is "/"
+#   - config_content                Your own oxyid configuration content. Default is undef.
+#   - htaccess_content              Your own htaccess configuration content. Default is undef.
+#   - config_source                 Your own oxid configuration source. Default is undef.
+#   - htaccess_source               Your own oxid htaccess source. Default is undef.
+#   - config_extra_replacements     Extra replacements for oxid configuration. Example:  {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }. Default is undef.
+#   - htaccess_extra_replacements   Extra replacements for htaccess. Default is undef.
+#   - db_setup_sql                  The setup file to execute. By default "setup/sql/database.sql". Default is undef.
+#   - extra_db_setup_sqls           Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]. Default is undef.
+#   - owner                         The owner of the directories. Default see $apache::params::user.
+#   - group                         The group of the directories. Default see $apache::params::group.
+#   - copy_this                     before or after update process to copy all files from the copy_this directory to the shop directory. Use none to stop copy.
+#   - changed_full                  before or after update process to copy all files from the xhanged_full directory to the shop directory. Use none to stop copy.
+#   - run_method                    cli or sql. In the cli mode the run_cli.php will be executed and in sql mode only the sql files will be executed. Default is "cli".
+#   - answers                       Anwser array
+#   - fail_on_error                 Some times some sql statments failed. to ignore this you can change the fail on error behaviour. Default true.
+#   - updateViews                   If true, update all views. Default true.
+#   - timeout                       the timeout for the update process. Default 900.
 #
 # Actions:
 #   - Download and install oxid update package

@@ -8,39 +8,40 @@ import "php/zendguardloader.pp"
 #
 # This class installs Oxid.
 #
+# This class use the orginal config.inc.php and .htaccess provided by the source archive and configure the files by replacing elements.
+# This allows you to configure all version of the config.inc.php and .htaccess provided by oxid.
+# If you don't need this feature, yo can define your own config.inc.php and .htaccess source.
+#
 # Parameters:
 #
-#   - repository          The repository to get from
-#   - source            The location of the setup archive in the defined repository. For output mapping use a hash, like {
-#   "index.php" => "OXID_ESHOP_CE_CURRENT.zip"}. This will download index.php to download file OXID_ESHOP_CE_CURRENT.zip. Helpfully
-#   to download from oxid default location.
-#   - purge             If true, deletes the shop dir.
-#   - shop_dir            The oxid shop directroy
-#   - compile_dir         The oxid compile directroy
-#   - db_type           Default is mysql and is only supported type.
-#   - db_host           Oxid database host
-#   - db_name           Oxid database name
-#   - db_user           Oxid database user
-#   - db_password         Oxid database password
-#   - shop_url            Oxid shop url
-#   - shop_ssl_url          Oxid shop ssl url
-#   - admin_ssl_url         Oxid admin ssl url
-#   - sql_charset         The chaset of the sql files. Default latin1.
-#   - mysql_user          MySQL User to prepare database
-#   - mysql_password        MySQL password
-#   - rewrite_base          Rewrite Base in the .htaccess file
-#   - config_content        Your own oxyid configuration content
-#   - htaccess_content        Your own htaccess configuration content
-#   - config_source         Your own oxid configuration source
-#   - htaccess_source       Your own oxid htaccess source
-#   - config_extra_replacements   Extra replacements for oxid configuration. Example:
-#   {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }
-#   - htaccess_extra_replacements Extra replacements for htaccess
-#   - db_setup_sql          The setup file to execute. By default "setup/sql/database.sql"
-#   - extra_db_setup_sqls     Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For
-#   Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]
-#   - owner             The owner of the directories
-#   - group             The group of the directories
+#   - source                    The location of the setup archive in the defined repository. Required.
+#   - repository                The repository to get from. Default is local file use.
+#   - purge                     If true, deletes the shop dir. Default is true.
+#   - shop_dir                  The oxid shop directroy. Default is "/srv/www/oxid"
+#   - compile_dir               The oxid compile directroy. Default is "/srv/www/oxid/tmp"
+#   - db_type                   Default is mysql and is the only supported type.
+#   - db_host                   Oxid database host. Default "localhost".
+#   - db_name                   Oxid database name. Default "oxid".
+#   - db_user                   Oxid database user. Default "oxid".
+#   - db_password               Oxid database password. Default "oxid".
+#   - shop_url                  Oxid shop url. Default "http://${hostname}"
+#   - shop_ssl_url              Oxid shop ssl url. Default is undef.
+#   - admin_ssl_url             Oxid admin ssl url. Default is undef.
+#   - utf8_mode                 Oxid UTF8 Mode. 0 for latin1 and 1 for UTF8. Default is 0.
+#   - sql_charset               The charset of the sql files. Default latin1.
+#   - mysql_user                MySQL User to prepare database. Default is "root".
+#   - mysql_password            MySQL password. Default is ""
+#   - rewrite_base              Rewrite Base in the .htaccess file. Default is "/"
+#   - config_content            Your own oxyid configuration content. Default is undef.
+#   - htaccess_content          Your own htaccess configuration content. Default is undef.
+#   - config_source             Your own oxid configuration source. Default is undef.
+#   - htaccess_source           Your own oxid htaccess source. Default is undef.
+#   - config_extra_replacements   Extra replacements for oxid configuration. Example:  {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }. Default is undef.
+#   - htaccess_extra_replacements Extra replacements for htaccess. Default is undef.
+#   - db_setup_sql              The setup file to execute. By default "setup/sql/database.sql". Default is undef.
+#   - extra_db_setup_sqls       Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]. Default is undef.
+#   - owner                     The owner of the directories. Default see $apache::params::user.
+#   - group                     The group of the directories. Default see $apache::params::group.
 #
 # Actions:
 #   - Download and install oxid
@@ -56,20 +57,27 @@ import "php/zendguardloader.pp"
 #   - PHP
 #
 # Sample Usage:
-#    class { oxid:
-#    source              => "OXID_ESHOP_EE_4.4.8_34028_for_PHP5.3.zip",
-#    repository          => "oxidee",
-#    shop_dir            => "/srv/www/oxid",
-#    compile_dir         => "/srv/www/oxid/tmp",
-#    db_host             => "localhost",
-#    db_name             => "oxid",
-#    db_user             => "oxid",
-#    db_password         => "secret",
-#    shop_ssl_url        => "https://myhostname",
-#    admin_ssl_url       => "https://myhostname/admin",
-#    mysql_user          => "root",
-#    mysql_password      => "secret"
-#  }
+#   oxid::repository::config::wget{ "oxidce": url => "http://download.oxid-esales.com/ce" }
+#
+#   class { oxid:
+#     source              => { "index.php" => "OXID_ESHOP_CE_CURRENT.zip" },
+#     repository          => "oxidce",
+#     shop_dir            => "/srv/www/oxid",
+#     compile_dir         => "/srv/www/oxid/tmp",
+#     db_host             => "localhost",
+#     db_name             => "oxid",
+#     db_user             => "oxid",
+#     db_password         => "secret",
+#     shop_ssl_url        => "https://myhostname",
+#     admin_ssl_url       => "https://myhostname/admin",
+#     mysql_user          => "root",
+#     mysql_password      => "secret",
+#     extra_db_setup_sqls => ["setup/sql/demodata.sql"]
+#   }
+#
+#   Creates a wget remote repository to the oxid community download location and installs an oxid community edition shop server with demodata.
+#   MySQL, Apache and PHP installation are hidden. See the corresponding documentation how to install them.
+#
 class oxid (
   $source,
   $repository          = $::oxid::params::default_repository,
@@ -108,7 +116,7 @@ class oxid (
   include ::oxid::apache::params
   include oxid::mysql::params
 
-  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[oxid] -> Oxid::ShopConfig <| |> -> 
+  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[oxid] -> Oxid::ShopConfig <| |> ->
   Oxid::Theme <| |> -> Oxid::Module <| |>
 
   if defined(Class['mysql::server']) {
@@ -130,7 +138,7 @@ class oxid (
   if defined(Service['httpd']) {
     Class[oxid] ~> Service['httpd']
   }
-  
+
   oxid::fileCheck { $name:
     shop_dir    => $shop_dir,
     compile_dir => $compile_dir,

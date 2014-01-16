@@ -2,7 +2,21 @@
 #
 # This class installs Zend Guard.
 #
+# This class load and installs Zend Guard Extension for several PHP versions and OS Archtectures.
+#
+# Supported OS Archtectures: i386 and x86_64
+# Supported PHP versions: 5.2, 5.3 and 5.4
+#
 # Parameters:
+#
+#   - php_dir               PHP config directory to install zenfgurad ini file. Default is "/etc/php5/apache2/conf.d".
+#   - extension_dir         PHP extension directory to install library. Defaul is "/usr/local/zend/lib/php/extensions".
+#   - version               PHP version for install Zend Guard. Supported Version are "5.2", "5.3" and "5.4". Default is "5.3".
+#   - repository            Repository to load Zenda Guars archive from. Default is the predefined download location 'zend'.
+#   - zend_optimizer_optimization_level   INI configuration. Default is 15.
+#   - zend_loader_license_path            INI configuration. Default is ''.
+#   - zend_loader_disable_licensing       INI configuration. Default is 0.
+#   - ini_source            Your own INI configuration source. Default is undef.
 #
 # Actions:
 #   - Download and install Zendguard
