@@ -1,25 +1,30 @@
 # oxid
 
-This puppet module setups a oxid shop including mysql server, apache and php.
-For the oxid PE/EE Editions special classes, like oxid::php::zendguardloader to setup Zend Guard, are included.
+This puppet module setups an oxid shop including mysql server, apache and php.
 
-With the oxid::repository::get definition, sources from local or remote locations can be used in a same way.
-
-Also some usefully definitions for remote Data and SQL acquisitions of existing shop is included.
-
-For update paths, the oxid::update definition allows you to make an unattended update.  
-
-Theme and Module installation and configuration are supported.
-Common configuration of oxconfig and oxshop are also posssible.
-
-All Editons and newer Version should be supported, but not realy tested.
-Legacy versions, like 4.4.8, are supported. This is the reason for developping this module, to have an update path fom oxid EE 4.4.8 to 5.1.1.
+## Features
+	- MySQL Server installation/setup
+	- PHP installation/setup
+	- Apache installation/setup
+	- Zend Guard installation/setup
+		For the oxid PE/EE Editions special classes, like oxid::php::zendguardloader to setup Zend Guard, are included.
+	- Repository stuff, to handle sources from local or remote locations in a same way. 
+	- Remote stuff, to download oxid data and sql dump.
+	- Oxid Shop installation/setup. 
+		Supported Versions: 4.5, 4.6, 4.7, 4.8, 5.0, 5.1 and also legacy version 4.4.8
+	- Oxid Theme installation/setup
+	- Oxid Module installation/setup
+	- Common configuration of oxconfig and oxshop
+	- File checks, see http://wiki.oxidforge.org/Installation#Files_.26_Folder_Permission_Setup for details.
+	- View Updates for oxid EE, to work correctly.
+	- Oxid Shop unattended update/upgrade
+		This was the primary reason for developing this module, to get the possibility to update from oxid EE 4.4.8 to 5.1.1.
 
 ## Repositories
-Several repositories locations can be configured to get thidparty sources.
+Several repositories locations can be configured to get third-party archives.
 At the moment local and wget repositories types are supported.
 E.g. use class oxid with parameter repository and source(only basename) to get required archive.
-For your environment you can download the oxid archives by your self and provide them via an http (wget type) or a puppet master(file type and puppet:// URI).
+For your environment you can download the oxid archives by your self and provide them via a local file directory, a http server or a puppet master setup in conjunction with a 'puppet://something' URI.
   
 ### oxid::repository::config::file
 ```puppet
@@ -42,8 +47,8 @@ For your environment you can download the oxid archives by your self and provide
   	Configure a remote repository named 'oxid' to the root URL http://example.com/oxid.  	
   	 
 ## Mysql
-Installs and setups a mysql server. This is optional, you can use a remote or install a custom MySQL sever instance/setup.
-The password is required. If you do not specify any override_options, the default override options will be calculated.
+Installs and setups a mysql server. This is optional, you can use a remote or install a custom MySQL sever instance.
+A password is required. If you do not specify any override_options, the default override options will be calculated, see class oxid::mysql::server::params.
 The example shows you a configuration with 2GB system memory. For more information see https://forge.puppetlabs.com/puppetlabs/mysql.
 
 ```puppet
@@ -83,6 +88,7 @@ For more information see https://forge.puppetlabs.com/puppetlabs/apache.
 ``` 
 ## PHP
 Installs and setups PHP. This is optional, you can use a custom PHP setup.
+Custom settings are provided by the class oxid::php::params to fit oxid requirements.
 For more information see https://forge.puppetlabs.com/nodes/php.
 
 ```puppet 
@@ -116,7 +122,7 @@ class { 'oxid::php::install':
 ```
 
 ### Zend Guard
-The class oxid::php::zendguardloader will setup PHP with Zend Guard.
+The class oxid::php::zendguardloader will add Zend Guard to the apache php module.
 This class is configured with the zend repository by default.
 
 ## Oxid Setup
@@ -156,7 +162,7 @@ oxid { "oxid":
 ```
 
 ### Setup Configuration
-The file config.inc.php and .htaccess file will be configure, by token replacements or directly by source contents.
+The file config.inc.php and .htaccess file will be configure, by token replacements in conjunction with the defined parameters or directly by source contents.
  
 ### Parameters
 	- repository					The repository to get from
@@ -205,7 +211,7 @@ The backup directory allows you to use the archive files without downloading the
 Use purge => true to purge the backuped file.
 Allowed compression for the archive: gzip, bzip2 and none.
 
-The ordering will recordnise the oxid class execution.
+This define will recordnize the ordering the oxid class executions.
 
 ```puppet 
 oxid::sshFetchRemoteData { "root@myhostname":
@@ -233,7 +239,7 @@ In the oxid Enterprise Edition, Views shoul be excluded in the dump. Otherwise y
 I have prepare two dump_options: $oxid::params::default_remote_dump_options_utf8 and $oxid::params::default_remote_dump_options_latin1.
 This allows you creating mysql dumps for utf8 and latin1 charsets.
   
-The ordering will recordnise the oxid class execution.
+This define will recordnize the ordering the oxid class executions.
   
 ```puppet 
 oxid::sshFetchRemoteSQL { "root@myhostname":
@@ -261,12 +267,9 @@ oxid::sshFetchRemoteSQL { "root@myhostname":
 Updates an existing oxid shop.
 Oxid offers update/upgrade packages. These packages have to unpack and some archive directories have to copy to shop directory.
 A script have to be executed to run the update process. The update process can not complete without user actions.  
-This module offer a solution to complete the update process without user actions. The run_cli.php will be overitten with a new unattended class defintion, to answer the questions in the update process.
-Also you can only run the sql files for update. This is usefully, because sometimes the update process in cli mode does not work correctly with sql files.
-
-Updates to UTF8 is not supported by this define! Attention on utf8_mode changes.
-
-This will also update the config.inc.php and .htaccess file and make a file check.
+This module offer a solution to complete the update process without user actions. A new unattended run_cli.php script custom UI class defintion will be used, to answer the questions in the update process.
+Also you can only run the sql files for update. This is usefully, because sometimes the update process in cli mode does not execute correctly the sql files.
+This will also update the config.inc.php and .htaccess file, make a file check and make a view update, if set.
 
 ```puppet
 oxid::update { "oxid448To465"
@@ -310,22 +313,26 @@ oxid::update { "oxid448To465"
 	- changed_full     	  before or after update process to copy all files from the xhanged_full directory to the shop directory. Use none to stop copy.
  	- run_method       	  cli or sql. In the cli mode the run_cli.php will be executed and in sql mode only the sql files will be imported.
   	- answers          	  Anwser array
-  	- fail_on_error    	  Some times some sql statments failed. to ignore this you can change the fail on error behaviour.
+  	- fail_on_error    	  Set to true, to ignore failures on cli update process. 
   	- updateViews      	  If true, update all views
 	- timeout			  the timeout for the update process.	
 
-### oxid::shopConfig
+### Limitations
+	- Updates to UTF8 is not supported by this define! 
+	- Attention on utf8_mode changes.
+	- Theme updates are not really supported.
+	
+## oxid::shopConfig
 	This define sets new values to oxshop table.
 
 ### Parameters:
-
- - shopid      Shop id of the shop to set new values. Default is 'oxbaseshop'. On EE Version always define this parameter.
- - configs     Hash with Key/Value Pairs, e.g. { 'columname' => 'new value' }
- - host        Database host: Default is "localhost".
- - port        Database port: Default is 3306.
- - db          Database name: Default is "oxid".
- - user        Database user: Default is "oxid".
- - password    Database password: Default is "oxid".
+	- shopid      Shop id of the shop to set new values. Default is 'oxbaseshop'. On EE Version always define this parameter.
+	- configs     Hash with Key/Value Pairs, e.g. { 'columname' => 'new value' }
+	- host        Database host: Default is "localhost".
+	- port        Database port: Default is 3306.
+	- db          Database name: Default is "oxid".
+	- user        Database user: Default is "oxid".
+	- password    Database password: Default is "oxid".
 
 ### Simple Oxid CE Setup Example
 ```puppet
@@ -345,19 +352,21 @@ oxid::update { "oxid448To465"
       } 
    }
 ```
+
 ##	oxid::oxconfig
 The define oxid::oxconfig allows you to configure default values.
 Legacy Version of oxid, like 4.4.8, are recordnized. Theme or Module configuration will be converted to default configurations.
 
 ### Parameters:
-   - ensure              present or absen. Default is present.
-   - shopid              Shop id, Used for Enterprise Editions. Default is oxbase.
-   - type                default for common parameters, theme for theme parameters and module for module parameters
-   - module              empty for common parameters and theme or module id.
-   - shop_dir            The oxid shop directroy.
-   - configurations      Hash value.
+	- ensure              present or absen. Default is present.
+	- shopid              Shop id, Used for Enterprise Editions. Default is oxbase.
+	- type                default for common parameters, theme for theme parameters and module for module parameters
+	- module              empty for common parameters and theme or module id.
+	- shop_dir            The oxid shop directroy.
+	- configurations      Hash value.
 
  Structure:
+```puppet 
   {
     'confbools' => {                           Boolean values
       'testbool'  => true,                     Key/Value pairs
@@ -382,7 +391,7 @@ Legacy Version of oxid, like 4.4.8, are recordnized. Theme or Module configurati
       'testnum'   => 1                         Key/Value pairs
     }
   }
-
+```
 	You have not to define all parent keys for using this define. 
 	Not all variants have be tested!
 
@@ -393,19 +402,19 @@ Legacy Version of oxid, like 4.4.8, are recordnized. Theme configuration will be
 
 ### Parameters:
 
-   - ensure              present or absen. Default is present.
-   - repository          The repository to get from
-   - source              The location of the setup archive in the defined repository.
-   - shopid              Shop id, Used for Enterprise Editions. Default is oxbase.
-   - active              If true, activate theme. Default is true.
-   - shop_dir            The oxid shop directroy.
-   - compile_dir         The oxid compile directroy
-   - configurations      Hash configurations options. See define oxid::oxconfig for more details.
-   - user                The owner of the directories
-   - group               The group of the directories
-   - copy_map            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'    => '', 'changed_full/' => '' } for oxid default structure.
-   - files               Array of files/directories to delete. Only used if ensure => 'absent'.
-   - default_theme       Default theme name, to activate, if ensure => 'absent'.
+	- ensure              present or absen. Default is present.
+	- repository          The repository to get from
+	- source              The location of the setup archive in the defined repository.
+	- shopid              Shop id, Used for Enterprise Editions. Default is oxbase.
+	- active              If true, activate theme. Default is true.
+	- shop_dir            The oxid shop directroy.
+	- compile_dir         The oxid compile directroy
+	- configurations      Hash configurations options. See define oxid::oxconfig for more details.
+	- user                The owner of the directories
+	- group               The group of the directories
+	- copy_map            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'    => '', 'changed_full/' => '' } for oxid default structure.
+	- files               Array of files/directories to delete. Only used if ensure => 'absent'.
+	- default_theme       Default theme name, to activate, if ensure => 'absent'.
 
 ##	oxid::module
 The define oxid::module allows you to install and/or configure oxid modules.
@@ -413,18 +422,18 @@ You do need any extra afford, like name prefixing "module::name", on configurati
 Legacy Version of oxid, like 4.4.8, are recordnized. Theme configuration will be converted to default configurations without prefixes.
 
 ### Parameters:
-
-   - ensure              activated, installed, overwrite, deactivated or purged. 'installed' install the module, but do not
-   						 activate the module, 'activated' does. 'overwrite' is like activated, but overrides class_mapping values. 'deactivated'
-   						 deactivate the module, but do nor remove module files, purged does. Default is activated.
-   - repository          The repository to get from.
-   - source              The location of the setup archive in the defined repository.
-   - shopid              Shop id, Used for Enterprise Editions. Default is oxbase.
-   - shop_dir            The oxid shop directroy.
-   - compile_dir         The oxid compile directroy
-   - configurations      Hash configurations options. See define oxid::oxconfig for more details.
-   - class_mapping       Hash for extending oxid classes. Used only for legacy mode. Oxid Version before 4.5.x.
-                         Single Mapping:
+	- ensure			activated, installed, overwrite, deactivated or purged. 'installed' install the module, but do not
+						activate the module, 'activated' does. 'overwrite' is like activated, but overrides class_mapping values. 'deactivated'
+						deactivate the module, but do nor remove module files, purged does. Default is activated.
+	- repository        The repository to get from.
+	- source            The location of the setup archive in the defined repository.
+	- shopid            Shop id, Used for Enterprise Editions. Default is oxbase.
+	- shop_dir          The oxid shop directroy.
+	- compile_dir       The oxid compile directroy
+	- configurations    Hash configurations options. See define oxid::oxconfig for more details.
+	- class_mapping     Hash for extending oxid classes. Used only for legacy mode. Oxid Version before 4.5.x.
+						Single Mapping:
+```puppet                         
                          class_mapping => {
                            "classToExtend" => "path1/class1"
                          }
@@ -433,14 +442,14 @@ Legacy Version of oxid, like 4.4.8, are recordnized. Theme configuration will be
                          class_mapping => {
                            "classToExtend" => ["path1/class1", "path2/class2"]
                          }
-                         The define will recordnize the uniqueness of the arrays. Existing class to extend, will be appended with
-                         new entries.
-                         if ensure => overwrite the Existing class to extend will be be overwriten with the define entries. This
-                         will remove old mapping entries for then given class to extend.
-   - user                The owner of the directories
-   - group               The group of the directories
-   - copy_map            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'  => '', 'changed_full/' => '' } for oxid default structure.
-   - files               Array of files/directories to delete. Only used if ensure => 'absent'.
+```                         
+						The define will recordnize the uniqueness of the arrays. Existing class to extend, will be appended with new entries.
+						if ensure => overwrite the Existing class to extend will be be overwriten with the define entries. This
+						will remove old mapping entries for then given class to extend.
+	- user              The owner of the directories
+	- group             The group of the directories
+	- copy_map          Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'  => '', 'changed_full/' => '' } for oxid default structure.
+	- files             Array of files/directories to delete. Only used if ensure => 'absent'.
    	
 ## Simple Oxid CE Setup Example
 This install all needed components for a single server with current oxid ce version and with no UTF8 mode.
@@ -490,8 +499,12 @@ If you don't want the demo data, please remove extra_db_setup_sqls parameter fro
 	- nodes/php 0.7.0
 	- puppetlabs/apache 0.10.0
 
+## Limitations
+	This has been tested on Ubuntu Precise.
+	Debian Debian Wheezy, CentOS 5.8, and FreeBSD 9.1 should work, because of the used dependencies.
+
 ## Todo
-	- Setting License information in PE/EE versions
-	- utf8 update
+	- Setting license information in PE/EE versions
+	- unattended utf8 update
 	- more testing
 	
