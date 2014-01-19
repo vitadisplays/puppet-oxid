@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.vitadisplays.puppet</groupId>
 	<artifactId>vitadisplays-oxid</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 	<name>vitadisplays-oxid</name>
 	<packaging>pom</packaging>
 	<build>
