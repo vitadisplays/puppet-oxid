@@ -6,6 +6,11 @@ define oxid::shopConfigS (
   $db       = $oxid::params::db_name,
   $user     = $oxid::params::db_user,
   $password = $oxid::params::db_password) {
+  $_req = defined(Class[oxid]) ? {
+    true    => Class[oxid],
+    default => undef
+  }
+
   $value = $configs[$name]
   $query = "UPDATE oxshops SET ${name}='${value}' WHERE oxid = '${shopid}'"
 
@@ -15,7 +20,8 @@ define oxid::shopConfigS (
     db       => $db,
     port     => $port,
     user     => $user,
-    password => $password
+    password => $password,
+    require  => $_req
   }
 }
 
@@ -32,7 +38,7 @@ define oxid::shopConfigS (
 # - db          Database name: Default is "oxid".
 # - user        Database user: Default is "oxid".
 # - password    Database password: Default is "oxid".
-# 
+#
 # Actions:
 #   - Download and install theme
 #   - activate theme
@@ -52,7 +58,7 @@ define oxid::shopConfigS (
 #      host => "localhost",
 #      port => 3306,
 #      db => "oxid",
-#      user => "oxid", 
+#      user => "oxid",
 #      password => "",
 #      configs => {
 #         "oxtitleprefix" => "",
@@ -60,7 +66,7 @@ define oxid::shopConfigS (
 #         "oxinfoemail" => "info@example.com",
 #         "oxorderemail" => "info@example.com",
 #         "oxowneremail" => "info@example.com",
-#      } 
+#      }
 #   }
 define oxid::shopConfig (
   $shopid   = 'oxbaseshop',
@@ -70,7 +76,6 @@ define oxid::shopConfig (
   $db       = $oxid::params::db_name,
   $user     = $oxid::params::db_user,
   $password = $oxid::params::db_password) {
-  
   $configKeys = keys($configs)
 
   oxid::shopConfigS { $configKeys:
