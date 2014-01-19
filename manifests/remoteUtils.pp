@@ -1,68 +1,83 @@
 include oxid::params
 
+# Define: oxid::rsyncGet
+#
+# This define use rsync to synchronize data from a remote source to a oxid shop target
+#
+# Parameters:
+#
+#   - name        relative path to copy
+#   - source      source to sync from. Syntax: "root@example.com:/srv/www/oxid"
+#   - shop_dir    target shop directory to copy to
+#   - keyfile     ssh keyfile to use. Default is "~/.ssh/id_rsa".
+#
+# Actions:
+#   - synchronize data
+#
+# Requires:
+#   - Oxid shop dir
+#
+# Sample Usage:
+#    oxid::rsyncGet { "out/pictures":
+#     source      => "root@example.com:/srv/www/oxid"
+#     shop_dir    => "/srv/www/oxid",
+#     keyfile     => "~/.ssh/id_rsa",
+#    }
+define oxid::rsyncGet ($source, $shop_dir, $keyfile = "~/.ssh/id_rsa", $timeout) {
+  if !defined(Class[oxid::package::utils]) {
+    include oxid::package::utils
+  }
+
+  exec { "rsync -raz -e \"ssh -i ${keyfile} -o StrictHostKeyChecking=no\" ${source}/${name}/ ${shop_dir}/${name}":
+    path    => $oxid::params::path,
+    timeout => $timeout,
+    require => Class[oxid::package::utils]
+  }
+}
+
 # Define: oxid::sshFetchRemoteData
 #
 # This define fetch remote data of an existing oxid instance.
 #
 # Parameters:
+#   - shop_dir      target shop dir, Required.
+#   - remote_dir    source remote dir to fetch from, Required.
+#   - includes      relative paths to fetch, Default is ['out/pictures', 'out/media'].
+#   - keyfile       ssh key file to use. Default is "~/.ssh/id_rsa".
+#   - timeout       timeout. Default is 18000.
+#   - backup_dir    if defined, this define fetch data to a backup file first.
+#   - compression   compression for backup file. gzip, bzip or none are supported. Default is 'gzip'.
+#   - purge         if set to true, existing backup file is purged and a new remote fetch will be execute. Otherwise the backup file be used, and no remote fetch will be done.
 #
 # Actions:
 #   - fetch data via ssh
 #   - Store content to an archive
 #
 # Requires:
-#   - Repository
 #   - Oxid instance
 #
 # Sample Usage:
 #    oxid::sshFetchRemoteData { "root@myremotehostname":
 #     shop_dir => "/srv/www/oxid",
-#     remote_dir => "/srv/www/oxid",
-#     ssh_ident_content => file("path to private key"),
+#     remote_dir => "/srv/www/oxid"
 #    }
 define oxid::sshFetchRemoteData (
   $shop_dir,
   $remote_dir,
-  $includes    = ["out/pictures", "out/media"],
+  $includes    = ['out/pictures', 'out/media'],
   $backup_dir  = undef,
-  $ssh_options = ['-C', '-o StrictHostKeyChecking=no'],
-  $ssh_ident_content,
+  $keyfile     = "~/.ssh/id_rsa",
   $timeout     = 18000,
   $compression = 'gzip',
   $purge       = true) {
-  validate_array($ssh_options, $includes)
+  validate_array($includes)
   validate_bool($purge)
   validate_absolute_path($shop_dir, $remote_dir)
   validate_re($name, '^.*@.*$')
 
   if defined(Oxid::Conf["oxid"]) {
     Oxid::Conf["oxid"] ~> Oxid::SshFetchRemoteData[$name]
-  }
-
-  $tmp_dir = $oxid::params::tmp_dir
-  $ident_file = inline_template("<%= File.join(@tmp_dir, (0...32).map{ ('a'..'z').to_a[rand(26)] }.join + '.private') %>")
-
-  $option_str = $ssh_options ? {
-    undef   => '',
-    default => join(unique(concat($ssh_options, ["-i '${ident_file}'"])), ' ')
-  }
-
-  exec { "${name}: data mkdir -p '${tmp_dir}'":
-    command => "mkdir -p '${tmp_dir}'",
-    path    => $oxid::params::path,
-    unless  => "test -d '${tmp_dir}'"
-  } ->
-  file { $ident_file:
-    ensure  => present,
-    content => $ssh_ident_content,
-    mode    => 0600
-  }
-
-  exec { "rm -f '${ident_file}'":
-    path        => $oxid::params::path,
-    onlyif      => "test -f '${ident_file}'",
-    refreshonly => true
-  }
+  }  
 
   if $backup_dir != undef {
     if !defined(Class[oxid::package::packer]) {
@@ -75,17 +90,17 @@ define oxid::sshFetchRemoteData (
     case $compression {
       'bzip2' : {
         $archive = "${backup_dir}/data.tar.bz2"
-        $create_prg = "ssh ${$option_str} ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cj -T - --null' > '${$archive}'"
+        $create_prg = "ssh -i '${keyfile}' -o StrictHostKeyChecking=no ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cj -T - --null' > '${$archive}'"
         $extract_prg = "tar -xjf '${$archive}' --directory '${shop_dir}'"
       }
       'gzip'  : {
         $archive = "${backup_dir}/data.tar.gz"
-        $create_prg = "ssh ${$option_str} ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cz -T - --null' > '${$archive}'"
+        $create_prg = "ssh -i '${keyfile}' -o StrictHostKeyChecking=no ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cz -T - --null' > '${$archive}'"
         $extract_prg = "tar -xzf '${$archive}' --directory '${shop_dir}'"
       }
       'none'  : {
         $archive = "${backup_dir}/data.tar"
-        $create_prg = "ssh ${$option_str} ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -c -T - --null' > '${$archive}'"
+        $create_prg = "ssh -i '${keyfile}' -o StrictHostKeyChecking=no ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -c -T - --null' > '${$archive}'"
         $extract_prg = "tar -xf '${$archive}' --directory '${shop_dir}'"
       }
 
@@ -111,7 +126,6 @@ define oxid::sshFetchRemoteData (
       path    => $oxid::params::path,
       unless  => "test -f '${archive}'",
       timeout => $timeout,
-      notify  => Exec["rm -f '${ident_file}'"],
       require => Class[oxid::package::packer]
     } ->
     exec { $extract_prg:
@@ -128,23 +142,15 @@ define oxid::sshFetchRemoteData (
       fail("No includes defined.")
     }
 
-    if !defined(Class[oxid::package::utils]) {
-      include oxid::package::utils
-    }
-
-    $includes_str = join(prefix(suffix($includes, "'"), "--include '"), ' ')
-
-    $commands = split(inline_template("<%= @includes.collect{|i| 'rsync -ravz -e \"ssh ' + @option_str + '\" \"' + @name + '\":\"' + File.join(@remote_dir, i) + '/\" \"' + File.join(@shop_dir, i) + '\" ; ' } %>"
-    ), ' ; ')
-
-    exec { $commands:
-      path    => $oxid::params::path,
-      timeout => $timeout,
-      notify  => defined(Oxid::FileCheck["oxid"]) ? {
-        true    => [Exec["rm -f '${ident_file}'"], Oxid::FileCheck["oxid"]],
-        default => Exec["rm -f '${ident_file}'"]
-      },
-      require => [Class[oxid::package::utils], File[$ident_file]]
+    oxid::rsyncGet { $includes:
+      source   => "${name}:${remote_dir}",
+      keyfile  => $keyfile,
+      shop_dir => $shop_dir,
+      timeout  => $timeout,
+      notify   => defined(Oxid::FileCheck["oxid"]) ? {
+        true    =>  Oxid::FileCheck["oxid"],
+        default => undef
+      }
     }
   }
 }
@@ -154,6 +160,24 @@ define oxid::sshFetchRemoteData (
 # This define fetch remote sql dump of an existing oxid database instance.
 #
 # Parameters:
+#   - db_name            local database name to import to. Default is "oxid".
+#   - db_user            local database user to import to. Default is "oxid".
+#   - db_password        local database password to import to. Default is "oxid".
+#   - db_host            local database host to import to. Default is "localhost".
+#   - db_port            local database port to import to. Default is 3306.
+#   - remote_db_name     remote database name to import from. Default is "oxid".
+#   - remote_db_user     remote database user to import from. Default is "oxid".
+#   - remote_db_password remote database password to import from. Default is "oxid".
+#   - remote_db_host     remote database host to import from. Default is "oxid".
+#   - remote_db_port     remote database port to import from. Default is 3306.
+#   - dump_tables        remote tables to dump.
+#   - dump_options       remote dump option to use.
+#   - keyfile            ssh key file to use. Default is "~/.ssh/id_rsa".
+#   - timeout            timeout. Default is 18000.
+#   - backup_dir         if defined, this define fetch data to a backup file first.
+#   - compression        compression for backup file. gzip, bzip or none are supported. Default is 'gzip'.
+#   - purge              if set to true, existing backup file is purged and a new remote fetch will be execute. Otherwise the backup file be used, and no remote fetch will be done.
+#
 #
 # Actions:
 #   - fetch sql dump via ssh
@@ -168,7 +192,6 @@ define oxid::sshFetchRemoteData (
 #    db_name => "oxid",
 #    db_user => "oxid",
 #    db_password => "secret",
-#    ssh_ident_content => file("path to private key"),
 #    remote_db_name => "oxid",
 #    remote_db_user => "oxid",
 #    remote_db_password => "secret",
@@ -180,7 +203,6 @@ define oxid::sshFetchRemoteData (
 #    db_name => "oxid",
 #    db_user => "oxid",
 #    db_password => "secret",
-#    ssh_ident_content => file("path to private key"),
 #    remote_db_name => "oxid",
 #    remote_db_user => "oxid",
 #    remote_db_password => "secret",
@@ -204,16 +226,13 @@ define oxid::sshFetchRemoteSQL (
   $remote_db_host     = $oxid::params::db_host,
   $remote_db_port     = $oxid::params::db_port,
   $backup_dir         = undef,
-  $ssh_options        = [
-    '-C',
-    '-o StrictHostKeyChecking=no'],
-  $ssh_ident_content,
+  $keyfile,
   $dump_tables        = undef,
   $dump_options       = $oxid::params::default_remote_dump_options_utf8,
   $timeout            = 18000,
   $compression        = 'gzip',
   $purge              = true) {
-  validate_array($ssh_options, $dump_options)
+  validate_array($dump_options)
   validate_bool($purge)
   validate_re($name, '^.*@.*$')
 
@@ -241,30 +260,6 @@ define oxid::sshFetchRemoteSQL (
     $dump_tables_str = $dump_tables
   }
 
-  $tmp_dir = $oxid::params::tmp_dir
-  $ident_file = inline_template("<%= File.join(@tmp_dir, (0...32).map{ ('a'..'z').to_a[rand(26)] }.join + '.private') %>")
-
-  $option_str = $ssh_options ? {
-    undef   => '',
-    default => join(unique(concat($ssh_options, ["-i '${ident_file}'"])), ' ')
-  }
-
-  exec { "${name}: sql mkdir -p '${tmp_dir}'":
-    command => "mkdir -p '${tmp_dir}'",
-    path    => $oxid::params::path,
-    unless  => "test -d '${tmp_dir}'"
-  } ->
-  file { $ident_file:
-    ensure  => present,
-    content => $ssh_ident_content,
-    mode    => 0600
-  }
-
-  exec { "rm -f '${ident_file}'":
-    path        => $oxid::params::path,
-    onlyif      => "test -f '${ident_file}'",
-    refreshonly => true
-  }
 
   if $backup_dir != undef {
     if !defined(Class[oxid::package::packer]) {
@@ -299,13 +294,12 @@ define oxid::sshFetchRemoteSQL (
       path    => $oxid::params::path,
       unless  => "test -d '${backup_dir}'"
     } ->
-    exec { "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}"
+    exec { "ssh -i '${keyfile}' -o StrictHostKeyChecking=no ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}"
     :
       path    => $oxid::params::path,
       unless  => "test -f '${archive}'",
       timeout => $timeout,
-      notify  => Exec["rm -f '${ident_file}'"],
-      require => [Class["oxid::package::packer"], File[$ident_file]]
+      require => Class["oxid::package::packer"]
     } ->
     oxid::mysql::execFile { $name:
       host        => $db_host,
@@ -331,12 +325,10 @@ define oxid::sshFetchRemoteSQL (
       }
     }
   } else {
-    exec { "ssh ${$option_str} ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' | mysql --host=\"${db_host}\" --port=${db_port} --user=\"${db_user}\" --password=\"${db_password}\" \"${db_name}\""
+    exec { "ssh -i '${keyfile}' -o StrictHostKeyChecking=no ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' | mysql --host=\"${db_host}\" --port=${db_port} --user=\"${db_user}\" --password=\"${db_password}\" \"${db_name}\""
     :
       path    => $oxid::params::path,
-      timeout => $timeout,
-      notify  => Exec["rm -f '${ident_file}'"],
-      require => File[$ident_file]
+      timeout => $timeout
     }
   }
 }
