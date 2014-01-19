@@ -5,13 +5,17 @@ define oxid::updateViews ($shop_dir = $oxid::params::shop_dir, $refreshonly = fa
     ensure  => 'present',
     mode    => "0755",
     content => template("oxid/oxid/php/update-views.erb")
-  } ->
+  }
+
   oxid::php::runner { $php_file:
     source      => $php_file,
-    refreshonly => $refreshonly
-  } ->
+    refreshonly => $refreshonly,
+    require     => File[$php_file]
+  }
+
   exec { "rm -f '${php_file}'":
     path        => $oxid::params::path,
-    refreshonly => $refreshonly
+    refreshonly => $refreshonly,
+    require     => Oxid::Php::Runner[$php_file]
   }
 }

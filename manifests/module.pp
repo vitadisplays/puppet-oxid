@@ -86,6 +86,11 @@ define oxid::module (
   validate_string($name)
   validate_re($ensure, ["^activated$", "^installed$", "^overwrite", "^deactivated$", "^purged$"])
 
+  $_req = defined(Class[oxid]) ? {
+    true    => Class[oxid],
+    default => undef
+  }
+
   $php_file = inline_template("<%= File.join(@shop_dir, (0...32).map{ ('a'..'z').to_a[rand(26)] }.join + '_module.php') %>")
   $json_class_mapping = $class_mapping ? {
     undef   => '',
@@ -111,7 +116,8 @@ define oxid::module (
         owner   => $user,
         group   => $group,
         mode    => "0755",
-        content => template("oxid/oxid/php/module.erb")
+        content => template("oxid/oxid/php/module.erb"),
+        require => $_req
       } ->
       oxid::php::runner { $php_file: source => $php_file, } ->
       exec { "rm -f '${php_file}'": path => $oxid::params::path }
@@ -130,7 +136,8 @@ define oxid::module (
 
       exec { "${name}: purge module files":
         command => $delete_cmd,
-        path    => $oxid::params::path
+        path    => $oxid::params::path,
+        require => $_req
       } ->
       oxid::unpack_module { $name:
         destination => $shop_dir,

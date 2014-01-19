@@ -8,7 +8,8 @@ import "php/zendguardloader.pp"
 #
 # This class installs Oxid.
 #
-# This class use the orginal config.inc.php and .htaccess provided by the source archive and configure the files by replacing elements.
+# This class use the orginal config.inc.php and .htaccess provided by the source archive and configure the files by replacing
+# elements.
 # This allows you to configure all version of the config.inc.php and .htaccess provided by oxid.
 # If you don't need this feature, yo can define your own config.inc.php and .htaccess source.
 #
@@ -36,10 +37,12 @@ import "php/zendguardloader.pp"
 #   - htaccess_content          Your own htaccess configuration content. Default is undef.
 #   - config_source             Your own oxid configuration source. Default is undef.
 #   - htaccess_source           Your own oxid htaccess source. Default is undef.
-#   - config_extra_replacements   Extra replacements for oxid configuration. Example:  {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }. Default is undef.
+#   - config_extra_replacements   Extra replacements for oxid configuration. Example:
+#   {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }. Default is undef.
 #   - htaccess_extra_replacements Extra replacements for htaccess. Default is undef.
 #   - db_setup_sql              The setup file to execute. By default "setup/sql/database.sql". Default is undef.
-#   - extra_db_setup_sqls       Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]. Default is undef.
+#   - extra_db_setup_sqls       Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For
+#   Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]. Default is undef.
 #   - owner                     The owner of the directories. Default see $apache::params::user.
 #   - group                     The group of the directories. Default see $apache::params::group.
 #
@@ -75,7 +78,8 @@ import "php/zendguardloader.pp"
 #     extra_db_setup_sqls => ["setup/sql/demodata.sql"]
 #   }
 #
-#   Creates a wget remote repository to the oxid community download location and installs an oxid community edition shop server with demodata.
+#   Creates a wget remote repository to the oxid community download location and installs an oxid community edition shop server with
+#   demodata.
 #   MySQL, Apache and PHP installation are hidden. See the corresponding documentation how to install them.
 #
 class oxid (
@@ -116,8 +120,9 @@ class oxid (
   include ::oxid::apache::params
   include oxid::mysql::params
 
-  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[oxid] -> Oxid::ShopConfig <| |> ->
-  Oxid::Theme <| |> -> Oxid::Module <| |>
+  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[oxid]
+
+  Class[oxid] -> Oxid::Theme <| |> -> Oxid::Module <| |>
 
   if defined(Class['mysql::server']) {
     Class['mysql::server'] -> Oxid::Mysql::Dropdb["${name}: drop database"]

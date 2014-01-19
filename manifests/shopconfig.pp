@@ -70,9 +70,6 @@ define oxid::shopConfig (
   $db       = $oxid::params::db_name,
   $user     = $oxid::params::db_user,
   $password = $oxid::params::db_password) {
-  if defined(Class[oxid]) {
-    Class[oxid] -> Oxid::ShopConfig[$name]
-  }
   
   $configKeys = keys($configs)
 

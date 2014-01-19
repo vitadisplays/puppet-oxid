@@ -18,10 +18,11 @@
 #   - configurations      Hash configurations options. See define oxid::oxconfig for more details.
 #   - user                The owner of the directories
 #   - group               The group of the directories
-#   - copy_map            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'    => '', 'changed_full/' => '' } for oxid default structure.
+#   - copy_map            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'
+#   => '', 'changed_full/' => '' } for oxid default structure.
 #   - files               Array of files/directories to delete. Only used if ensure => 'absent'.
 #   - default_theme       Default theme name, to activate, if ensure => 'absent'.
-# 
+#
 # Actions:
 #   - Download and install theme
 #   - activate theme
@@ -60,8 +61,13 @@ define oxid::theme (
   $default_theme  = "azure",
   $configurations = undef) {
   validate_string($name)
-  validate_re($ensure, ["^activated$", "^installed$","^deactivated$", "^purged$"])
-  
+  validate_re($ensure, ["^activated$", "^installed$", "^deactivated$", "^purged$"])
+
+  $_req = defined(Class[oxid]) ? {
+    true    => Class[oxid],
+    default => undef
+  }
+
   if $files != undef {
     validate_array($files)
 
@@ -75,7 +81,7 @@ define oxid::theme (
   $php_file = inline_template("<%= File.join(@shop_dir, (0...32).map{ ('a'..'z').to_a[rand(26)] }.join + '_theme.php') %>")
 
   case $ensure {
-    /purged/    : {
+    /purged/              : {
       validate_string($name)
 
       exec { "rm -r -f '${shop_dir}/out/${name}'":
@@ -90,7 +96,8 @@ define oxid::theme (
           destination => $shop_dir,
           source      => $source,
           repository  => $repository,
-          copy_map    => $copy_map
+          copy_map    => $copy_map,
+          require     => $_req
         }
 
         oxid::fileCheck { $name:

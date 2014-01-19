@@ -217,13 +217,7 @@ This define will recordnize the ordering the oxid class executions.
 oxid::sshFetchRemoteData { "root@myhostname":
   shop_dir 					=> "/srv/www/oxid",
   remote_dir				=> "/srv/www/oxid",
-  includes    				=> ["out/pictures", "out/media", "out/downloads"],
-  backup_dir   				=> "tmp/oxid/proxy/myhostname",
-  ssh_options				=> [ '-C', '-o StrictHostKeyChecking=no'],
-  ssh_ident_content			=> file("path to private ssh key"),
-  timeout     				=> 18000,
-  compression 				=> 'gzip',
-  purge       				=> true
+  includes    				=> ["out/pictures", "out/media", "out/downloads"]
 }
 ```
   
@@ -253,14 +247,8 @@ oxid::sshFetchRemoteSQL { "root@myhostname":
   remote_db_password => "oxid",
   remote_db_host     => "localhost",
   remote_db_port     => 3306,
-  proxy_dir          => "tmp/oxid/proxy/myhostname",
-  ssh_options        => [ '-C', '-o StrictHostKeyChecking=no'],
-  ssh_ident_content	 => file("path to private ssh key"),
   dump_tables 		 => "$(mysql --user='${configurations['remoteDBUser']}' --password='${configurations['remoteDBPwd']}' -B -N -e \"Select TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = '\\''${configurations['remoteDBName']}'\\'' AND TABLE_TYPE != '\\''VIEW'\\'' AND TABLE_NAME NOT IN('\\''oxadminlog'\\'')\" | grep -v Tables_in | xargs)",
-  dump_options       = $oxid::params::default_remote_dump_options_utf8,
-  timeout            = 18000,
-  compression        = 'gzip',
-  purge              = true
+  dump_options       = $oxid::params::default_remote_dump_options_utf8
 }
 ```
 ## Oxid Updates

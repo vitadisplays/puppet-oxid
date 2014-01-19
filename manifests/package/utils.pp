@@ -9,9 +9,16 @@ class oxid::package::utils {
       require => Class[oxid::apt]
     }
   }
-  
+
   if !defined(Package["rssh"]) {
     package { "rssh":
+      ensure  => installed,
+      require => Class[oxid::apt]
+    }
+  }
+
+  if !defined(Package["rsync"]) {
+    package { "rsync":
       ensure  => installed,
       require => Class[oxid::apt]
     }

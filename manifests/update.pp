@@ -114,8 +114,7 @@ define oxid::update (
   include ::oxid::apache::params
   include oxid::mysql::params
 
-  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |> -> Oxid::ShopConfig <| |> -> 
-  Oxid::Theme <| |> -> Oxid::Module <| |>
+  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |>
 
   if defined(Service['httpd']) {
     Oxid::Update[$name] ~> Service['httpd']
