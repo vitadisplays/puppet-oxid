@@ -23,9 +23,10 @@ description 'Features
 	- View Updates for oxid EE, to work correctly.
 	- Oxid Shop unattended update/upgrade
 		This was the primary reason for developing this module, to get the possibility to update from oxid EE 4.4.8 to 5.1.1.'
-dependency 'puppetlabs-stdlib', '>= 4.1.0'
-dependency 'puppetlabs-apt', '>= 1.4.0'
+dependency 'puppetlabs/stdlib', '>= 4.1.0'
+dependency 'puppetlabs/apt', '>= 1.4.0'
 dependency 'puppetlabs/apache', '>= 0.10.0'
+dependency 'puppetlabs/concat', '>= 1.0.0'
 dependency 'puppetlabs/mysql', '>= 2.1.0'
 dependency 'maestrodev/wget', '>= 1.3.1'
 dependency 'nodes/php', '>= 0.7.0'
