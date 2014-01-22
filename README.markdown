@@ -477,6 +477,76 @@ If you don't want the demo data, please remove extra_db_setup_sqls parameter fro
   }
 ```
 
+## Examples
+Under the folder examples, you find some simple and adavance cases to use this module.
+The puppet folder includes the init.pp files for several cases.
+Feel free to change it for your own requierments.
+ 
+### Requirements
+	- Vitualbox >= 4.2
+	- Vagrant >= 1.4.0
+	
+#### Virtualbox and Vagrant
+Virtualbox and Vagrant is used for these examples.
+Reaad the comments in Vagrant file, for activating the several examples.
+Change config.vm.box, config.vm.hostname, config.vm.box_url and so on for your requirements.
+Run vagrant up in your vagrant folder to starting up VM. If no provision was made, run vagrant provision to do this, or use vagrant up --provision.
+
+##### Boxes
+I have tested agains the precise64 box from vagrant http://files.vagrantup.com/precise64.box.
+I run into several problems, with the installed vagrant ruby version and augeas.
+I resolve the problems by upgrading to ruby 1.9.
+I provide a shell that do the job for me. See shell for details.
+
+##### shell
+Vagrant runs a shell provisoning (examples/shell/main.sh), to install some requirements:
+	- ruby 1.9						augeas problem
+	- open3_backport >= 0.0.3		augeas problem
+	- puppet >= 3.4.2				current puppet version
+	- facter >= 1.7.4				current facter version
+	- librarian-puppet-maestrodev	current librarian-puppet-maestrodev to install puppet modules
+	- installs current puppet-oxid module from git, including dependencies.	
+
+You can use this script to prepare you own boxes.
+If no more needed, comment out config.vm.provision :shell in Vagrant file.
+
+### Current CE
+	Installs a current Oxid CE Shop. Binary sources will be loaded from http://download.oxid-esales.com/ce
+	Change Vagrant puppet.manifests_path to "../puppet/current_ce/manifest"
+	
+	Actions:
+	- Install MySQL Server
+	- Install PHP
+	- Install Zend Guard
+	- Install Apache
+	- Install current oxid CE Shop
+	- Set some values in the oxshops table.
+		
+### Upgrade Oxid EE 4.4.8 to 5.1.1
+	Installs a Oxid Shop EE 4.4.8 with sql dump, piciture and media data from a remote host.
+	Preapare your own download location for the oxid binaries. See Actions, which binaryies aou have to to provide.
+	Change init.pp, if you don#t want a wget repositoy. 
+	
+	Change Vagrant puppet.manifests_path to "../puppet/upgradeEE448To5.1.x/manifest"
+	Change Vagrant config.vm.synced_folder to e.g. "../../../mydata", "/vagrant_data"
+	
+	Add/Change YAML oxid-config.yml file for your requirements in config.vm.synced_folder. Under examples/puppet/upgradeEE448To5.1.x/yaml you find an example.
+	Attention: Because of using a remote oxid instance, used this script with your own risk! Try to use mysql user with only read access.
+	Add keyfile to config.vm.synced_folder
+		
+	Actions:
+	- Install MySQL Server
+	- Install PHP
+	- Install Zend Guard
+	- Install Apache
+	- Install 4.4.8 with source OXID_ESHOP_EE_4.4.8_34028_for_PHP5.3.zip
+	- Fetches picture and media data from remote host
+	- Fetches sql dump from remote host
+	- Upgrade from 4.4.8 to 4.6.5 with source UPDATE_OXID_ESHOP_EE_V.4.4.8_34028_TO_V.4.6.5_49955_for_PHP5.3.zip
+	- Upgrade from 4.6.5 to 5.0.0 with source UPGRADE_OXID_ESHOP_EE_V.4.6.5_49955_TO_V.5.0.0_51243.zip. Some files may be upgraded by you, see init.pp class oxid448To465 for more details.
+	- Upgrade from 5.0.0 to 5.1.1 with source UPDATE_OXID_ESHOP_EE_V.5.0.0_TO_V.5.1.1_for_PHP_5.3.zip
+	- Activate azure theme	
+
 ## Requirements
 	- maestrodev/wget 1.3.1
 	- camptocamp/augeas 0.0.1
@@ -486,7 +556,8 @@ If you don't want the demo data, please remove extra_db_setup_sqls parameter fro
 	- puppetlabs/mysql 2.1.0
 	- nodes/php 0.7.0
 	- puppetlabs/apache 0.10.0
-
+	- puppetlabs/concat 1.0.0
+	
 ## Limitations
 	This has been tested on Ubuntu Precise.
 	Debian Debian Wheezy, CentOS 5.8, and FreeBSD 9.1 should work, because of the used dependencies.
