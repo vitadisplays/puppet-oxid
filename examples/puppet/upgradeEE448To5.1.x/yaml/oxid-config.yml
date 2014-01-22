@@ -1,0 +1,17 @@
+oxideeRepository: http://myhost/development/oxid/ee
+sRewriteBase: /
+remoteDBName: oxid
+remoteDBUser: oxid-readonly user
+remoteDBPwd: secret password
+remotePath: /srv/www/oxid
+dbHost: localhost
+dbName: oxid
+dbUser: oxid
+dbPwd: secret password
+mysql_user: root
+mysql_password: secret password
+mysql_port: 3306
+sShopDir: /srv/www/oxid
+sCompileDir: /srv/www/oxid/tmp
+sTheme: basic
+iUtfMode: 0

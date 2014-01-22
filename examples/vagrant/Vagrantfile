@@ -8,9 +8,6 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant virtual environment requires a box to build off of.
   config.vm.box = "puppet-oxid-test"
-
-  # Box name for packaging
-  #config.package.name = "ubuntu_precise64_vitadisplays.box"
   
   # Hostname of the box
   config.vm.hostname = "puppet-oxid-test"
@@ -37,7 +34,7 @@ Vagrant.configure("2") do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
+  config.vm.synced_folder "../../../mydata", "/vagrant_data"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
@@ -58,7 +55,8 @@ Vagrant.configure("2") do |config|
   config.vm.provision :shell, :path => "../shell/main.sh"
   
   config.vm.provision :puppet, :options => ["--modulepath", "/opt/puppet/share/puppet/modules"] do |puppet|      
-     puppet.manifests_path = "../puppet/example_ce/manifest"
+     #puppet.manifests_path = "../puppet/current_ce/manifest"
+     puppet.manifests_path = "../puppet/upgradeEE448To5.1.x/manifest"
      puppet.manifest_file  = "init.pp"  
   end
 end

@@ -3,7 +3,7 @@
 # - Installs a MySQL Server
 # - Installs PHP
 # - Installs Apache Web Server
-# - Installs Oxid
+# - Installs Oxid with demodata
 # - Setting some option in the oxshop table.
 #
 oxid::repository::config::wget { "oxidce": url => "http://download.oxid-esales.com/ce" }
