@@ -494,6 +494,9 @@ Run vagrant up in your vagrant folder to starting up VM. If no provision was mad
 
 ##### Boxes
 I have tested agains the precise64 box from vagrant http://files.vagrantup.com/precise64.box.
+
+Use vagrant box add precise64 http://files.vagrantup.com/precise64.box to install requiered box.
+
 I run into several problems, with the installed vagrant ruby version and augeas.
 I resolve the problems by upgrading to ruby 1.9.
 I provide a shell that do the job for me. See shell for details.
