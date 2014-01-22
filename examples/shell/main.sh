@@ -8,6 +8,23 @@ if [ ! -d $PUPPET_DIR ]; then
 	chmod 775 $PUPPET_DIR
 fi
 
+# Puppetfile
+#
+# Add ref for specified git version
+# mod 'oxid', :git => 'https://github.com/vitadisplays/puppet-oxid.git', :ref => '0.0.1'
+#
+# If unsing sources from puppet forge:
+# forge "http://forge.puppetlabs.com"
+#
+# mod 'puppetlabs/stdlib', '>= 4.1.0'
+# mod 'puppetlabs/apt', '>= 1.4.0'
+# mod 'puppetlabs/apache', '>= 0.10.0'
+# mod 'puppetlabs/concat', '>= 1.0.0'
+# mod 'puppetlabs/mysql', '>= 2.1.0'
+# mod 'maestrodev/wget', '>= 1.3.1'
+# mod 'nodes/php', '>= 0.7.0'
+# mod 'camptocamp/augeas', '>= 0.0.1'
+#
 cat <<'EOF' > $PUPPET_DIR/Puppetfile
 mod 'oxid', :git => 'https://github.com/vitadisplays/puppet-oxid.git'
 EOF

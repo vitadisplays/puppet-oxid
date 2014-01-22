@@ -505,7 +505,7 @@ Vagrant runs a shell provisoning (examples/shell/main.sh), to install some requi
 	- puppet >= 3.4.2				current puppet version
 	- facter >= 1.7.4				current facter version
 	- librarian-puppet-maestrodev	current librarian-puppet-maestrodev to install puppet modules
-	- installs current puppet-oxid module from git, including dependencies.	
+	- installs current puppet-oxid module from git, including dependencies.	See main.sh for other options.
 
 You can use this script to prepare you own boxes.
 If no more needed, comment out config.vm.provision :shell in Vagrant file.
