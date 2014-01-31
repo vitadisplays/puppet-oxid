@@ -226,13 +226,13 @@ define oxid::unpack_module ($destination, $source = undef, $repository, $timeout
       require     => Oxid::Repository::Get[$name]
     }
   } else {
-    fail("Value for copy_map undef or hash expected.")
+    fail("Value for copy_filter undef or hash expected.")
   }
 }
 
 define oxid::unpack_copy_helper ($root_dir, $copy_filter, $extract_dir) {
   $key = inline_template("<%= @name.to_s[@extract_dir.to_s.length..-1] %>")
-  $destination = inline_template("<%= File.join(@root_dir, @copy_map[@key]) %>")
+  $destination = inline_template("<%= File.join(@root_dir, @copy_filter[@key]) %>")
 
   exec { "${name}: mkdir -p '${destination}'":
     command => "mkdir -p '${destination}'",
