@@ -400,7 +400,7 @@ Legacy Version of oxid, like 4.4.8, are recordnized. Theme configuration will be
 	- configurations      Hash configurations options. See define oxid::oxconfig for more details.
 	- user                The owner of the directories
 	- group               The group of the directories
-	- copy_map            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'    => '', 'changed_full/' => '' } for oxid default structure.
+	- copy_file            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/*'    => '', 'changed_full/*' => '' } for oxid default structure.
 	- files               Array of files/directories to delete. Only used if ensure => 'absent'.
 	- default_theme       Default theme name, to activate, if ensure => 'absent'.
 
@@ -436,7 +436,7 @@ Legacy Version of oxid, like 4.4.8, are recordnized. Theme configuration will be
 						will remove old mapping entries for then given class to extend.
 	- user              The owner of the directories
 	- group             The group of the directories
-	- copy_map          Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'  => '', 'changed_full/' => '' } for oxid default structure.
+	- copy_filter          Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/*'  => '', 'changed_full/*' => '' } for oxid default structure.
 	- files             Array of files/directories to delete. Only used if ensure => 'absent'.
    	
 ## Simple Oxid CE Setup Example
