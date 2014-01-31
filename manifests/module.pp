@@ -31,8 +31,8 @@
 #                         will remove old mapping entries for then given class to extend.
 #   - user                The owner of the directories
 #   - group               The group of the directories
-#   - copy_map            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'
-#   => '', 'changed_full/' => '' } for oxid default structure.
+#   - copy_filter            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/*'
+#   => '', 'changed_full/*' => '' } for oxid default structure.
 #   - files               Array of files/directories to delete. Only used if ensure => 'absent'.
 #
 # Actions:
@@ -78,7 +78,7 @@ define oxid::module (
   $shopid         = $oxid::params::default_shopid,
   $source         = undef,
   $repository     = undef,
-  $copy_map       = undef,
+  $copy_filter     = undef,
   $files          = undef,
   $ensure         = "activated",
   $configurations = undef,
@@ -143,7 +143,7 @@ define oxid::module (
         destination => $shop_dir,
         source      => $source,
         repository  => $repository,
-        copy_map    => $copy_map
+        copy_filter    => $copy_filter
       } -> oxid::fileCheck { $name:
         shop_dir    => $shop_dir,
         compile_dir => $compile_dir,
@@ -181,7 +181,7 @@ define oxid::module (
   }
 }
 
-define oxid::unpack_module ($destination, $source = undef, $repository, $timeout = 0, $copy_map = undef) {
+define oxid::unpack_module ($destination, $source = undef, $repository, $timeout = 0, $copy_filter = undef) {
   $repo_config = $oxid::params::repository_configs["${repository}"]
   $repo_dir = $repo_config['directory']
   $tmp_dir = $oxid::params::tmp_dir
@@ -194,9 +194,9 @@ define oxid::unpack_module ($destination, $source = undef, $repository, $timeout
     repository => $repository
   }
 
-  if $copy_map != undef {
-    validate_hash($copy_map)
-    $copy_dirs = prefix(keys($copy_map), "${extract_dir}/")
+  if $copy_filter != undef {
+    validate_hash($copy_filter)
+    $copy_dirs = prefix(keys($copy_filter), "${extract_dir}/")
 
     exec { "${name}: mkdir -p '${extract_dir}'":
       command => "mkdir -p '${extract_dir}'",
@@ -210,7 +210,7 @@ define oxid::unpack_module ($destination, $source = undef, $repository, $timeout
       require     => Oxid::Repository::Get[$name]
     } ->
     ::oxid::unpack_copy_helper { $copy_dirs:
-      copy_map    => $copy_map,
+      copy_filter    => $copy_filter,
       root_dir    => $destination,
       extract_dir => "${extract_dir}/"
     } -> exec { "${name}: rm -r -f '${extract_dir}'":
@@ -218,7 +218,7 @@ define oxid::unpack_module ($destination, $source = undef, $repository, $timeout
       path    => $oxid::params::path,
       onlyif  => "test -d '${extract_dir}'"
     }
-  } elsif $copy_map == undef {
+  } elsif $copy_filter == undef {
     ::oxid::unpack { $name:
       source      => $file,
       destination => $destination,
@@ -230,7 +230,7 @@ define oxid::unpack_module ($destination, $source = undef, $repository, $timeout
   }
 }
 
-define oxid::unpack_copy_helper ($root_dir, $copy_map, $extract_dir) {
+define oxid::unpack_copy_helper ($root_dir, $copy_filter, $extract_dir) {
   $key = inline_template("<%= @name.to_s[@extract_dir.to_s.length..-1] %>")
   $destination = inline_template("<%= File.join(@root_dir, @copy_map[@key]) %>")
 

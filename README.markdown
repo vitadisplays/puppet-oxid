@@ -346,7 +346,7 @@ The define oxid::oxconfig allows you to configure default values.
 Legacy Version of oxid, like 4.4.8, are recordnized. Theme or Module configuration will be converted to default configurations.
 
 ### Parameters:
-	- ensure              present or absen. Default is present.
+	- ensure              present or absent. Default is present.
 	- shopid              Shop id, Used for Enterprise Editions. Default is oxbase.
 	- type                default for common parameters, theme for theme parameters and module for module parameters
 	- module              empty for common parameters and theme or module id.
@@ -390,7 +390,7 @@ Legacy Version of oxid, like 4.4.8, are recordnized. Theme configuration will be
 
 ### Parameters:
 
-	- ensure              present or absen. Default is present.
+	- ensure              present or absent. Default is present.
 	- repository          The repository to get from
 	- source              The location of the setup archive in the defined repository.
 	- shopid              Shop id, Used for Enterprise Editions. Default is oxbase.

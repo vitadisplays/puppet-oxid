@@ -18,8 +18,8 @@
 #   - configurations      Hash configurations options. See define oxid::oxconfig for more details.
 #   - user                The owner of the directories
 #   - group               The group of the directories
-#   - copy_map            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'
-#   => '', 'changed_full/' => '' } for oxid default structure.
+#   - copy_filter            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/*'
+#   => '', 'changed_full/*' => '' } for oxid default structure.
 #   - files               Array of files/directories to delete. Only used if ensure => 'absent'.
 #   - default_theme       Default theme name, to activate, if ensure => 'absent'.
 #
@@ -55,7 +55,7 @@ define oxid::theme (
   $shopid         = $oxid::params::default_shopid,
   $source         = undef,
   $repository     = undef,
-  $copy_map       = undef,
+  $copy_filter    = undef,
   $files          = undef,
   $ensure         = "activated",
   $default_theme  = "azure",
@@ -96,7 +96,7 @@ define oxid::theme (
           destination => $shop_dir,
           source      => $source,
           repository  => $repository,
-          copy_map    => $copy_map,
+          copy_filter    => $copy_filter,
           require     => $_req
         }
 
@@ -146,7 +146,7 @@ define oxid::theme (
   }
 }
 
-define oxid::unpack_theme ($destination, $source = undef, $repository, $timeout = 0, $copy_map = undef) {
+define oxid::unpack_theme ($destination, $source = undef, $repository, $timeout = 0, $copy_filter = undef) {
   $repo_config = $oxid::params::repository_configs["${repository}"]
   $repo_dir = $repo_config['directory']
   $tmp_dir = $oxid::params::tmp_dir
@@ -159,9 +159,9 @@ define oxid::unpack_theme ($destination, $source = undef, $repository, $timeout 
     repository => $repository
   }
 
-  if $copy_map != undef {
-    validate_hash($copy_map)
-    $copy_dirs = prefix(keys($copy_map), "${extract_dir}/")
+  if $copy_filter != undef {
+    validate_hash($copy_filter)
+    $copy_dirs = prefix(keys($copy_filter), "${extract_dir}/")
 
     exec { "${name}: mkdir -p '${extract_dir}'":
       command => "mkdir -p '${extract_dir}'",
@@ -175,11 +175,11 @@ define oxid::unpack_theme ($destination, $source = undef, $repository, $timeout 
       require     => Oxid::Repository::Get[$name]
     } ->
     ::oxid::unpack_copy_helper { $copy_dirs:
-      copy_map    => $copy_map,
+      copy_filter   => $copy_filter,
       root_dir    => $destination,
       extract_dir => "${extract_dir}/"
     }
-  } elsif $copy_map == undef {
+  } elsif $copy_filter == undef {
     ::oxid::unpack { $name:
       source      => $file,
       destination => $destination,
