@@ -18,8 +18,8 @@
 #   - configurations      Hash configurations options. See define oxid::oxconfig for more details.
 #   - user                The owner of the directories
 #   - group               The group of the directories
-#   - copy_filter            Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/*'
-#   => '', 'changed_full/*' => '' } for oxid default structure.
+#   - copy_filter         Hash to help unpacking and coping files. Default is undef, that unpack as flat file. Use {'copy_this/'
+#   => '', 'changed_full/' => '' } for oxid default structure. Works only for a directory defintion. Have to improved in the next versions.
 #   - files               Array of files/directories to delete. Only used if ensure => 'absent'.
 #   - default_theme       Default theme name, to activate, if ensure => 'absent'.
 #
@@ -187,6 +187,6 @@ define oxid::unpack_theme ($destination, $source = undef, $repository, $timeout 
       require     => Oxid::Repository::Get[$name]
     }
   } else {
-    fail("Parameter copy_map expectd undef or hash value.")
+    fail("Parameter copy_filter expectd undef or hash value.")
   }
 }

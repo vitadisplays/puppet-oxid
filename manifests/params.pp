@@ -70,8 +70,8 @@ class oxid::params {
 
   $supported_archives = [".phar", ".zip", ".tar.gz", "tgz", ".gz", ".bz2", ".rar"]
 
-  $default_module_copy_map = {
-    'copy_this/'    => '',
-    'changed_full/' => ''
+  $default_module_copy_filter = {
+    'copy_this/*'    => '',
+    'changed_full/*' => ''
   }
 }
