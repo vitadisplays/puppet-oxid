@@ -1,4 +1,6 @@
 class oxid::mysql::server::params {
+  include oxid::mysql::params
+  
   $max_connections = 100
   $table_cache = $max_connections * 128
 
