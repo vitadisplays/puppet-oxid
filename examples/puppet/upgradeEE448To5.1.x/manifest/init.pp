@@ -190,7 +190,9 @@ class oxid465To500 ($configurations) {
     path    => "/usr/bin:/usr/sbin:/bin",
     timeout => 0
   } ->
+  # make an upgrade in sql mode without modyfing themes etc. Have problems in cli mode.  
   oxid::update { $name:
+    run_method      => "sql",
     shop_dir      => $configurations['sShopDir'],
     compile_dir   => $configurations['sCompileDir'],
     db_host       => $configurations['dbHost'],
@@ -200,8 +202,7 @@ class oxid465To500 ($configurations) {
     shop_ssl_url  => $configurations['sSSLShopURL'],
     admin_ssl_url => $configurations['sAdminSSLURL'],
     source        => "UPGRADE_OXID_ESHOP_EE_V.4.6.5_49955_TO_V.5.0.0_51243.zip",
-    repository    => "oxidee",
-    answers       => ["2"]
+    repository    => "oxidee"
   }
 }
 

@@ -6,13 +6,15 @@ import "updateViews.pp"
 #
 # This define update an existing Oxid instance.
 #
-# This define use the orginal config.inc.php and .htaccess if provided by the source archive and configure the files by replacing elements.
+# This define use the orginal config.inc.php and .htaccess if provided by the source archive and configure the files by replacing
+# elements.
 # This allows you to configure all version of the config.inc.php and .htaccess provided by oxid.
 # If you don't need this feature, you can define your own config.inc.php and .htaccess source.
 #
 # The update Procces is default done by the run_cli.php script. This script will be extended that uses unanttended UI Classes.
 # Over the Answer parameter, you can define your Answers like ["1", "2", "1"]. Return Answers are handled by default.
-# Sometimes the run_cli.php script do not handle the SQL scripts well. In this case, use run_method => "sql", to run only the SQL Scripts directly by mysql.
+# Sometimes the run_cli.php script do not handle the SQL scripts well. In this case, use run_method => "sql", to run only the SQL
+# Scripts directly by mysql.
 #
 # Parameters:
 #   - source                        The location of the setup archive in the defined repository. Required.
@@ -33,17 +35,23 @@ import "updateViews.pp"
 #   - htaccess_content              Your own htaccess configuration content. Default is undef.
 #   - config_source                 Your own oxid configuration source. Default is undef.
 #   - htaccess_source               Your own oxid htaccess source. Default is undef.
-#   - config_extra_replacements     Extra replacements for oxid configuration. Example:  {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }. Default is undef.
+#   - config_extra_replacements     Extra replacements for oxid configuration. Example:
+#   {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }. Default is undef.
 #   - htaccess_extra_replacements   Extra replacements for htaccess. Default is undef.
 #   - db_setup_sql                  The setup file to execute. By default "setup/sql/database.sql". Default is undef.
-#   - extra_db_setup_sqls           Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]. Default is undef.
+#   - extra_db_setup_sqls           Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For
+#   Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]. Default is undef.
 #   - owner                         The owner of the directories. Default see $apache::params::user.
 #   - group                         The group of the directories. Default see $apache::params::group.
-#   - copy_this                     before or after update process to copy all files from the copy_this directory to the shop directory. Use none to stop copy.
-#   - changed_full                  before or after update process to copy all files from the xhanged_full directory to the shop directory. Use none to stop copy.
-#   - run_method                    cli or sql. In the cli mode the run_cli.php will be executed and in sql mode only the sql files will be executed. Default is "cli".
+#   - copy_this                     before or after update process to copy all files from the copy_this directory to the shop
+#   directory. Use none to stop copy.
+#   - changed_full                  before or after update process to copy all files from the xhanged_full directory to the shop
+#   directory. Use none to stop copy.
+#   - run_method                    cli or sql. In the cli mode the run_cli.php will be executed and in sql mode only the sql files
+#   will be executed. Default is "cli".
 #   - answers                       Anwser array
-#   - fail_on_error                 Some times some sql statments failed. to ignore this you can change the fail on error behaviour. Default true.
+#   - fail_on_error                 Some times some sql statments failed. to ignore this you can change the fail on error behaviour.
+#   Default true.
 #   - updateViews                   If true, update all views. Default true.
 #   - timeout                       the timeout for the update process. Default 900.
 #
@@ -119,7 +127,7 @@ define oxid::update (
   if defined(Service['httpd']) {
     Oxid::Update[$name] ~> Service['httpd']
   }
-  
+
   validate_re($copy_this, ['^before$', '^after$', '^never$'], "Only before, after or never for copy_this parameter are supported.")
   validate_re($changed_full, ['^before$', '^after$', '^never$'], "Only before, after or never for changed_full parameter are supported."
   )
@@ -134,12 +142,13 @@ define oxid::update (
   }
 
   $filename = inline_template('<%= File.basename(@mysource) %>')
-
+  $archive_dir = "${oxid::params::tmp_dir}/${filename}"
+  
   $cmds = [
-    "cp -R -f ${oxid::params::tmp_dir}/${filename}/updateApp/ ${shop_dir}/",
-    "cp -R -f ${oxid::params::tmp_dir}/${filename}/copy_this/* ${shop_dir}/",
-    "cp -R -f ${oxid::params::tmp_dir}/${filename}/changed_full/* ${shop_dir}/",
-    "rm -r -f '${oxid::params::tmp_dir}/${filename}'"]
+    "cp -R -f ${archive_dir}/updateApp/ ${shop_dir}/",
+    "cp -R -f ${archive_dir}/copy_this/* ${shop_dir}/",
+    "cp -R -f ${archive_dir}/changed_full/* ${shop_dir}/",
+    "rm -r -f '${archive_dir}'"]
 
   oxid::fileCheck { $name:
     shop_dir    => $shop_dir,
@@ -195,18 +204,10 @@ define oxid::update (
     notify             => Oxid::UpdateViews[$name]
   }
 
-  exec { $cmds[0]:
-    path    => $oxid::params::path,
-    onlyif  => "test -d '${oxid::params::tmp_dir}/${filename}/updateApp'",
-    timeout => 120,
-    notify  => [Oxid::FileCheck[$name], Exec[$cmds[3]]],
-    require => Oxid::Repository::Unpack["${name}: ${mysource}"]
-  }
-
   if $copy_this == 'before' or $copy_this == 'after' {
     exec { $cmds[1]:
       path    => $oxid::params::path,
-      onlyif  => "test -d '${oxid::params::tmp_dir}/${filename}/copy_this'",
+      onlyif  => "test -d '${archive_dir}/copy_this'",
       timeout => 120,
       before  => [Oxid::Conf[$name], Oxid::Htaccess[$name]],
       require => Oxid::Repository::Unpack["${name}: ${mysource}"],
@@ -217,7 +218,7 @@ define oxid::update (
   if $changed_full == 'before' or $changed_full == 'after' {
     exec { $cmds[2]:
       path    => $oxid::params::path,
-      onlyif  => "test -d '${oxid::params::tmp_dir}/${filename}/changed_full'",
+      onlyif  => "test -d '${archive_dir}/changed_full'",
       timeout => 120,
       before  => [Oxid::Conf[$name], Oxid::Htaccess[$name]],
       require => Oxid::Repository::Unpack["${name}: ${mysource}"],
@@ -230,9 +231,13 @@ define oxid::update (
       $run_cli_filename = inline_template("<%= File.basename(@filename, '.*') %>")
       $php_file = "${shop_dir}/updateApp/${run_cli_filename}.php"
 
+      exec { $cmds[0]:
+        path    => $oxid::params::path,
+        notify  => [Oxid::FileCheck[$name], Exec[$cmds[3]]],
+        require => Oxid::Repository::Unpack["${name}: ${mysource}"]
+      } ->
       file { $php_file:
-        content => template("oxid/oxid/updateApp/run_unattended_cli.php.erb"),
-        require => Exec[$cmds[0]]
+        content => template("oxid/oxid/updateApp/run_unattended_cli.php.erb")
       } ->
       oxid::php::runner { "${name}: run cli ${php_file}":
         source  => $php_file,
@@ -262,8 +267,8 @@ define oxid::update (
         }
       }
     }
-    'sql' : {
-      $sql_dir = inline_template("<%= File.join(@shop_dir, 'updateApp', 'updates', 'sql') %>")
+    'sql' : {      
+      $sql_dir = inline_template("<%= File.join(@archive_dir, 'updateApp', 'updates', 'sql') %>")
 
       oxid::mysql::execDirectory { "${name}: update database from ${sql_dir}":
         directory => $sql_dir,
