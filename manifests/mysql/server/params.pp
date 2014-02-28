@@ -11,6 +11,8 @@ class oxid::mysql::server::params {
 
   $override_options = {
     'mysqld' => {
+      'character-set-server'  => $oxid::mysql::params::default_db_charset,
+      'collation-server'  => $oxid::mysql::params::default_db_collation,
       'max_connections'   => $max_connections,
       'table_cache'       => $table_cache,
       'key_buffer'        => "${key_buffer}M",
