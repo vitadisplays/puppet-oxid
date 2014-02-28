@@ -4,7 +4,8 @@ define oxid::mysql::createdb (
   $port    = $oxid::mysql::params::default_port,
   $user    = $oxid::mysql::params::default_user,
   $password,
-  $charset = $oxid::mysql::params::default_db_charset) {  
+  $charset = $oxid::mysql::params::default_db_charset,
+  $collation = $oxid::mysql::params::default_db_collation) {  
 
   if !defined(Class[::mysql::client]) {
     include ::mysql::client
@@ -12,7 +13,7 @@ define oxid::mysql::createdb (
 
   exec { "${name}: mysql create ${db} on ${host} with charset ${charset}":
     path    => $oxid::params::path,
-    command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' -e \"create database ${db} charset=${charset}\"",
+    command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' -e \"CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation}\"",
     require => Class[::mysql::client]
   }
 }
@@ -59,7 +60,7 @@ define oxid::mysql::dropdb (
 
   exec { "${name}: mysql drop ${db} on ${host}":
     path    => $oxid::params::path,
-    command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' -e \"drop database IF EXISTS ${db};\"",
+    command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' -e \"DROP DATABASE IF EXISTS ${db};\"",
     require => Class[::mysql::client]
   }
 }
