@@ -143,7 +143,7 @@ define oxid::update (
 
   $filename = inline_template('<%= File.basename(@mysource) %>')
   $archive_dir = "${oxid::params::tmp_dir}/${filename}"
-  
+
   $cmds = [
     "cp -R -f ${archive_dir}/updateApp/ ${shop_dir}/",
     "cp -R -f ${archive_dir}/copy_this/* ${shop_dir}/",
@@ -236,9 +236,7 @@ define oxid::update (
         notify  => [Oxid::FileCheck[$name], Exec[$cmds[3]]],
         require => Oxid::Repository::Unpack["${name}: ${mysource}"]
       } ->
-      file { $php_file:
-        content => template("oxid/oxid/updateApp/run_unattended_cli.php.erb")
-      } ->
+      file { $php_file: content => template("oxid/oxid/updateApp/run_unattended_cli.php.erb") } ->
       oxid::php::runner { "${name}: run cli ${php_file}":
         source  => $php_file,
         output  => "${shop_dir}/log/${run_cli_filename}.log",
@@ -267,7 +265,7 @@ define oxid::update (
         }
       }
     }
-    'sql' : {      
+    'sql' : {
       $sql_dir = inline_template("<%= File.join(@archive_dir, 'updateApp', 'updates', 'sql') %>")
 
       oxid::mysql::execDirectory { "${name}: update database from ${sql_dir}":
@@ -280,15 +278,27 @@ define oxid::update (
       }
 
       case $copy_this {
-        'before' : { Exec[$cmds[0]] -> Exec[$cmds[1]] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"] }
-        'after'  : { Exec[$cmds[0]] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"] -> Exec[$cmds[1]] }
-        default  : { Exec[$cmds[0]] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"] }
+        'before' : {
+          Exec[$cmds[1]] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"]
+        }
+        'after'  : {
+          Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"] -> Exec[$cmds[1]]
+        }
+        default  : {
+          Oxid::Repository::Unpack["${name}: ${mysource}"] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"]
+        }
       }
 
       case $changed_full {
-        'before' : { Exec[$cmds[0]] -> Exec[$cmds[2]] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"] }
-        'after'  : { Exec[$cmds[0]] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"] -> Exec[$cmds[2]] }
-        default  : { Exec[$cmds[0]] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"] }
+        'before' : {
+          Exec[$cmds[2]] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"]
+        }
+        'after'  : {
+          Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"] -> Exec[$cmds[2]]
+        }
+        default  : {
+          Oxid::Repository::Unpack["${name}: ${mysource}"] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"]
+        }
       }
 
       if $updateViews {
