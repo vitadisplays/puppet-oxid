@@ -226,12 +226,11 @@ class oxid (
     grant_password => $db_password
   } ->
   oxid::mysql::execFile { "${name}: init database ${db_name}":
-    source   => $db_setup_sql,
+    source   => "${shop_dir}/${db_setup_sql}",
     host     => $db_host,
     db       => $db_name,
     user     => $db_user,
     password => $db_password,
-    cwd      => $shop_dir,
     charset  => $sql_charset
   } ->
   oxid::htaccess { $name:
@@ -260,12 +259,13 @@ class oxid (
   }
 
   if $extra_db_setup_sqls != undef {
-    oxid::mysql::execFile { $extra_db_setup_sqls:
+    $extra_sql_files = prefix($extra_db_setup_sqls, "${shop_url}/")
+    
+    oxid::mysql::execFile { $extra_sql_files:
       host     => $db_host,
       db       => $db_name,
       user     => $db_user,
       password => $db_password,
-      cwd      => $shop_dir,
       charset  => $sql_charset,
       require  => Oxid::Mysql::ExecFile["${name}: init database ${db_name}"],
       notify   => Oxid::UpdateViews[$name]

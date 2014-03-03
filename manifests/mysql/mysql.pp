@@ -11,10 +11,20 @@ define oxid::mysql::createdb (
     include ::mysql::client
   }
 
-  exec { "${name}: mysql create ${db} on ${host} with charset ${charset}":
+  /*exec { "${name}: mysql create ${db} on ${host} with collate ${collation} and charset ${charset}":
     path    => $oxid::params::path,
     command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' -e \"CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation}\"",
     require => Class[::mysql::client]
+  }*/
+  
+  mysql_exec { $name:
+    host     => $host,
+    port     => $port,
+    user     => $user,
+    password => $password,
+    statement     => "CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation}",
+    charset  => $charset,
+    require  => Class[::mysql::client, oxid::package::packer]
   }
 }
 
@@ -41,10 +51,19 @@ define oxid::mysql::grantdb (
     include ::mysql::client
   }
 
-  exec { "${name}: mysql grant ${grant_privs} on ${db}.* to  ${real_grant_user}@${grant_host}":
+  /*exec { "${name}: mysql grant ${grant_privs} on ${db}.* to  ${real_grant_user}@${grant_host}":
     command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' -e \"GRANT ${grant_privs} ON ${db}.* TO ${real_grant_user}@${grant_host} IDENTIFIED BY '${real_grant_password}'; FLUSH PRIVILEGES;\"",
     path    => $oxid::params::path,
     require => Class[::mysql::client]
+  }*/
+  
+  mysql_exec { $name:
+    host     => $host,
+    port     => $port,
+    user     => $user,
+    password => $password,
+    statement     => "GRANT ${grant_privs} ON ${db}.* TO ${real_grant_user}@${grant_host} IDENTIFIED BY '${real_grant_password}'; FLUSH PRIVILEGES;",
+    require  => Class[::mysql::client]
   }
 }
 
@@ -58,10 +77,19 @@ define oxid::mysql::dropdb (
     include ::mysql::client
   }
 
-  exec { "${name}: mysql drop ${db} on ${host}":
+  /*exec { "${name}: mysql drop ${db} on ${host}":
     path    => $oxid::params::path,
     command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' -e \"DROP DATABASE IF EXISTS ${db};\"",
     require => Class[::mysql::client]
+  }*/
+  
+  mysql_exec { $name:
+    host     => $host,
+    port     => $port,
+    user     => $user,
+    password => $password,
+    statement     => "DROP DATABASE IF EXISTS ${db};",
+    require  => Class[::mysql::client]
   }
 }
 
@@ -72,9 +100,9 @@ define oxid::mysql::execFile (
   $user        = $oxid::mysql::params::default_user,
   $password,
   $source      = undef,
-  $extract_cmd = undef,
+  /*$extract_cmd = undef,
   $unless      = undef,
-  $cwd         = undef,
+  $cwd         = undef,*/
   $charset     = undef,
   $timeout     = 300) {
   if $source != undef {
@@ -87,7 +115,7 @@ define oxid::mysql::execFile (
     include ::mysql::client
   }
 
-  $extra_options = $charset ? {
+  /*$extra_options = $charset ? {
     undef   => "",
     default => " --default-character-set=${charset}"
   }
@@ -106,6 +134,16 @@ define oxid::mysql::execFile (
       timeout => $timeout,
       require => Class[::mysql::client, oxid::package::packer]
     }
+    
+    mysql_exec {$name: 
+      host => $host,
+      port => $port,
+      user => $user,
+      password => $password,
+      file => $myfile,
+      charset => $charset,
+      require => Class[::mysql::client, oxid::package::packer]      
+    }
   } else {
     exec { "${name}: mysql${extra_options} --host='${host}' --port=$port --user='${user}' --password='******' '${db}' < ${myfile}":
       command => "mysql${extra_options} --host='${host}' --port=$port --user='${user}' --password='${password}' '${db}' < ${myfile}",
@@ -115,6 +153,17 @@ define oxid::mysql::execFile (
       timeout => $timeout,
       require => Class[::mysql::client]
     }
+  }*/
+  
+  mysql_exec { $name:
+    host     => $host,
+    port     => $port,
+    user     => $user,
+    password => $password,
+    database => $db,
+    file     => $myfile,
+    charset  => $charset,
+    require  => Class[::mysql::client]
   }
 }
 
@@ -138,7 +187,7 @@ define oxid::mysql::execDirectory (
     include ::mysql::client
   }
 
-  $extra_options = $charset ? {
+  /*$extra_options = $charset ? {
     undef   => "",
     default => " --default-character-set=${charset}"
   }
@@ -149,8 +198,19 @@ define oxid::mysql::execDirectory (
     path    => $oxid::params::path,
     timeout => $timeout,
     require => Class[::mysql::client]
-  }
+  }*/
 
+  mysql_exec { $name:
+    host     => $host,
+    port     => $port,
+    user     => $user,
+    password => $password,
+    database => $db,
+    directory     => $mydir,
+    pattern => $pattern,
+    charset  => $charset,
+    require  => Class[::mysql::client]
+  }
 }
 
 define oxid::mysql::execSQL (
@@ -171,12 +231,22 @@ define oxid::mysql::execSQL (
     include ::mysql::client
   }
 
-  exec { "${myquery}":
+  /*exec { "${myquery}":
     command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' '${db}' -e \"${myquery}\"",
     path    => $oxid::params::path,
     unless  => $unless,
     timeout => $timeout,
     require => Class[::mysql::client]
+  }*/
+  
+  mysql_exec { $name:
+    host     => $host,
+    port     => $port,
+    user     => $user,
+    password => $password,
+    database => $db,
+    statement     => $myquery,
+    require  => Class[::mysql::client]
   }
 }
 

@@ -301,19 +301,25 @@ define oxid::sshFetchRemoteSQL (
       timeout => $timeout,
       require => Class["oxid::package::packer"]
     } ->
+    oxid::unpack { $archive:
+      destination => "${backup_dir}/${backup_file}.sql"
+    } ->
     oxid::mysql::execFile { $name:
       host        => $db_host,
       port        => $db_port,
       user        => $db_user,
       db          => $db_name,
       password    => $db_password,
-      source      => $archive,
-      extract_cmd => $extract_prg,
+      source      => "${backup_dir}/${backup_file}.sql",
       timeout     => $timeout,
       notify      => defined(Oxid::UpdateViews["oxid"]) ? {
         true    => Oxid::UpdateViews["oxid"],
         default => undef
       }
+    } -> 
+    exec { "rm -f '${backup_dir}/${backup_file}.sql'":
+        path    => $oxid::params::path,
+        unless  => "test -e '${backup_dir}/${backup_file}.sql'"
     }
 
     if $purge {
