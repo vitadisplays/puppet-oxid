@@ -47,7 +47,7 @@ Puppet::Type.type(:mysql_exec).provide(:mysql_exec) do
 	
 	def directory=(directory)
 	  	info "executing files from #{directory}"
-	  	Dir.glob(directory, "#{@resource[:pattern]}")).each do|f|
+	  	Dir.glob(directory, "#{@resource[:pattern]}").each do|f|
 			file(f)
  		end
 	end	
