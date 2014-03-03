@@ -23,38 +23,26 @@ Puppet::Type.newtype(:mysql_exec) do
     
     newparam(:user) do
         desc "The mysql user"
-        
-        defaultto nil
     end
         
     newparam(:password) do
         desc "The mysql password"
-        
-        defaultto nil
     end
      
     newparam(:database) do
         desc "The mysql database"
-        
-        defaultto nil
     end
                 
     newproperty(:statement) do
         desc "The statement"
-        
-        defaultto nil
     end
 
     newproperty(:file) do
         desc "The file including statement"
-        
-        defaultto nil
     end
     
     newproperty(:directory) do
         desc "The directory path including statements files"
-        
-        defaultto nil
     end
     
     newparam(:pattern) do
