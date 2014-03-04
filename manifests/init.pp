@@ -125,11 +125,11 @@ class oxid (
   Class[oxid] -> Oxid::Theme <| |> -> Oxid::Module <| |>
 
   if defined(Class['mysql::server']) {
-    Class['mysql::server'] -> Oxid::Mysql::Dropdb["${name}: drop database"]
+    Class['mysql::server'] -> Oxid::Mysql::Initdb["${name}: init database ${db_name}"]
   }
 
   if defined(Package['mysql_client']) {
-    Package['mysql_client'] -> Oxid::Mysql::Dropdb["${name}: drop database"]
+    Package['mysql_client'] -> Oxid::Mysql::Initdb["${name}: init database ${db_name}"]
   }
 
   if defined(Class['::apache']) {
@@ -183,35 +183,7 @@ class oxid (
     destination => $shop_dir,
     password    => $source_password
   } ->
-  oxid::mysql::dropdb { "${name}: drop database":
-    host     => $db_host,
-    db       => $db_name,
-    user     => $mysql_user ? {
-      undef   => $db_user,
-      default => $mysql_user
-    },
-    password => $mysql_password ? {
-      undef   => $db_password,
-      default => $mysql_password
-    }
-  } ->
-  oxid::mysql::createdb { "${name}: create database ${db_name}":
-    host     => $db_host,
-    db       => $db_name,
-    user     => $mysql_user ? {
-      undef   => $db_user,
-      default => $mysql_user
-    },
-    password => $mysql_password ? {
-      undef   => $db_password,
-      default => $mysql_password
-    },
-    charset  => $utf8_mode ? {
-      1       => 'utf8',
-      default => 'latin1'
-    }
-  } ->
-  oxid::mysql::grantdb { "${name}: grant database ${db_name}":
+  oxid::mysql::initdb { "${name}: init database ${db_name}":
     host           => $db_host,
     db             => $db_name,
     user           => $mysql_user ? {
@@ -222,10 +194,61 @@ class oxid (
       undef   => $db_password,
       default => $mysql_password
     },
+    charset        => $utf8_mode ? {
+      1       => 'utf8',
+      default => 'latin1'
+    },
+    collation      => $utf8_mode ? {
+      1       => 'utf8_general_ci',
+      default => 'latin1_general_ci'
+    },
     grant_user     => $db_user,
     grant_password => $db_password
   } ->
-  oxid::mysql::execFile { "${name}: init database ${db_name}":
+  /* oxid::mysql::dropdb { "${name}: drop database":
+   * host     => $db_host,
+   * db       => $db_name,
+   * user     => $mysql_user ? {
+   * undef   => $db_user,
+   * default => $mysql_user
+   * },
+   * password => $mysql_password ? {
+   * undef   => $db_password,
+   * default => $mysql_password
+   *}
+   * } ->
+   * oxid::mysql::createdb { "${name}: create database ${db_name}":
+   * host     => $db_host,
+   * db       => $db_name,
+   * user     => $mysql_user ? {
+   * undef   => $db_user,
+   * default => $mysql_user
+   * },
+   * password => $mysql_password ? {
+   * undef   => $db_password,
+   * default => $mysql_password
+   * },
+   * charset  => $utf8_mode ? {
+   * 1       => 'utf8',
+   * default => 'latin1'
+   *}
+   * } ->
+   * oxid::mysql::grantdb { "${name}: grant database ${db_name}":
+   * host           => $db_host,
+   * db             => $db_name,
+   * user           => $mysql_user ? {
+   * undef   => $db_user,
+   * default => $mysql_user
+   * },
+   * password       => $mysql_password ? {
+   * undef   => $db_password,
+   * default => $mysql_password
+   * },
+   * grant_user     => $db_user,
+   * grant_password => $db_password
+   * } ->
+   */
+  oxid::mysql::execFile { "${name}: setup database ${db_name}":
     source   => "${shop_dir}/${db_setup_sql}",
     host     => $db_host,
     db       => $db_name,
@@ -260,14 +283,14 @@ class oxid (
 
   if $extra_db_setup_sqls != undef {
     $extra_sql_files = prefix($extra_db_setup_sqls, "${shop_url}/")
-    
+
     oxid::mysql::execFile { $extra_sql_files:
       host     => $db_host,
       db       => $db_name,
       user     => $db_user,
       password => $db_password,
       charset  => $sql_charset,
-      require  => Oxid::Mysql::ExecFile["${name}: init database ${db_name}"],
+      require  => Oxid::Mysql::ExecFile["${name}: setup database ${db_name}"],
       notify   => Oxid::UpdateViews[$name]
     }
   }

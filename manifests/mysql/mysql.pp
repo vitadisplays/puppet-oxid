@@ -1,5 +1,41 @@
 include mysql_exec
 
+define oxid::mysql::initdb (
+  $db,
+  $host           = $oxid::mysql::params::default_host,
+  $port           = $oxid::mysql::params::default_port,
+  $user           = $oxid::mysql::params::default_user,
+  $password,
+  $charset = $oxid::mysql::params::default_db_charset,
+  $collation = $oxid::mysql::params::default_db_collation,
+  $grant_user     = undef,
+  $grant_password = undef,
+  $grant_host     = 'localhost',
+  $grant_privs    = 'ALL') {
+  $real_grant_user = $grant_user ? {
+    undef   => $user,
+    default => $grant_user
+  }
+  $real_grant_password = $grant_user ? {
+    undef   => $password,
+    default => $grant_password
+  }
+
+  if !defined(Class[::mysql::client]) {
+    include ::mysql::client
+  }
+  
+  mysql_query { $name:
+    host     => $host,
+    port     => $port,
+    user     => $user,
+    password => $password,
+    query     => "DROP DATABASE IF EXISTS ${db}; CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation}; GRANT ${grant_privs} ON ${db}.* TO ${real_grant_user}@${grant_host} IDENTIFIED BY '${real_grant_password}'; FLUSH PRIVILEGES;",
+    charset  => $charset,
+    require  => Class[::mysql::client]
+  }
+}
+
 define oxid::mysql::createdb (
   $db,
   $host    = $oxid::mysql::params::default_host,
@@ -24,7 +60,7 @@ define oxid::mysql::createdb (
     port     => $port,
     user     => $user,
     password => $password,
-    query     => "CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation}",
+    query     => "CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation};",
     charset  => $charset,
     require  => Class[::mysql::client, oxid::package::packer]
   }
