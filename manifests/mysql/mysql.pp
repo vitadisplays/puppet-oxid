@@ -18,13 +18,13 @@ define oxid::mysql::createdb (
     command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' -e \"CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation}\"",
     require => Class[::mysql::client]
   }*/
-  
-  mysql_exec { $name:
+
+  mysql_query { $name:
     host     => $host,
     port     => $port,
     user     => $user,
     password => $password,
-    statement     => "CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation}",
+    query     => "CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation}",
     charset  => $charset,
     require  => Class[::mysql::client, oxid::package::packer]
   }
@@ -59,12 +59,12 @@ define oxid::mysql::grantdb (
     require => Class[::mysql::client]
   }*/
   
-  mysql_exec { $name:
+  mysql_query { $name:
     host     => $host,
     port     => $port,
     user     => $user,
     password => $password,
-    statement     => "GRANT ${grant_privs} ON ${db}.* TO ${real_grant_user}@${grant_host} IDENTIFIED BY '${real_grant_password}'; FLUSH PRIVILEGES;",
+    query     => "GRANT ${grant_privs} ON ${db}.* TO ${real_grant_user}@${grant_host} IDENTIFIED BY '${real_grant_password}'; FLUSH PRIVILEGES;",
     require  => Class[::mysql::client]
   }
 }
@@ -85,12 +85,12 @@ define oxid::mysql::dropdb (
     require => Class[::mysql::client]
   }*/
   
-  mysql_exec { $name:
+  mysql_query { $name:
     host     => $host,
     port     => $port,
     user     => $user,
     password => $password,
-    statement     => "DROP DATABASE IF EXISTS ${db};",
+    query     => "DROP DATABASE IF EXISTS ${db};",
     require  => Class[::mysql::client]
   }
 }
@@ -157,7 +157,7 @@ define oxid::mysql::execFile (
     }
   }*/
   
-  mysql_exec { $name:
+  mysql_query { $name:
     host     => $host,
     port     => $port,
     user     => $user,
@@ -202,14 +202,13 @@ define oxid::mysql::execDirectory (
     require => Class[::mysql::client]
   }*/
 
-  mysql_exec { $name:
+  mysql_query { $name:
     host     => $host,
     port     => $port,
     user     => $user,
     password => $password,
     database => $db,
     directory     => $mydir,
-    pattern => $pattern,
     charset  => $charset,
     require  => Class[::mysql::client]
   }
@@ -241,13 +240,13 @@ define oxid::mysql::execSQL (
     require => Class[::mysql::client]
   }*/
   
-  mysql_exec { $name:
+  mysql_query { $name:
     host     => $host,
     port     => $port,
     user     => $user,
     password => $password,
     database => $db,
-    statement     => $myquery,
+    query     => $myquery,
     require  => Class[::mysql::client]
   }
 }
