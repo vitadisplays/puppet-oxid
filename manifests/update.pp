@@ -268,14 +268,27 @@ define oxid::update (
     'sql' : {
       $sql_dir = inline_template("<%= File.join(@archive_dir, 'updateApp', 'updates', 'sql') %>")
 
-      oxid::mysql::execDirectory { "${name}: update database from ${sql_dir}":
-        directory => $sql_dir,
-        pattern   => "*.sql",
-        host      => $db_host,
-        db        => $db_name,
-        user      => $db_user,
-        password  => $db_password
+      if !defined(Class[::mysql::client]) {
+        include ::mysql::client
       }
+
+      mysql_import { "${sql_dir}/*.sql":
+        db_host     => $db_host,
+        db_user     => $user,
+        db_password => $db_password,
+        db_name     => $db_name,
+        require     => Class[::mysql::client]
+      }
+
+      /* oxid::mysql::execDirectory { "${name}: update database from ${sql_dir}":
+       * directory => $sql_dir,
+       * pattern   => "*.sql",
+       * host      => $db_host,
+       * db        => $db_name,
+       * user      => $db_user,
+       * password  => $db_password
+       *}
+       */
 
       case $copy_this {
         'before' : {
@@ -306,7 +319,7 @@ define oxid::update (
           shop_dir    => $shop_dir,
           refreshonly => false,
           notify      => Oxid::FileCheck[$name],
-          require     => Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"]
+          require     => Mysql_import["${sql_dir}/*.sql"]
         }
       }
     }

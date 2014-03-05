@@ -47,7 +47,8 @@ define oxid::rsyncGet ($source, $shop_dir, $keyfile = "~/.ssh/id_rsa", $timeout)
 #   - timeout       timeout. Default is 18000.
 #   - backup_dir    if defined, this define fetch data to a backup file first.
 #   - compression   compression for backup file. gzip, bzip or none are supported. Default is 'gzip'.
-#   - purge         if set to true, existing backup file is purged and a new remote fetch will be execute. Otherwise the backup file be used, and no remote fetch will be done.
+#   - purge         if set to true, existing backup file is purged and a new remote fetch will be execute. Otherwise the backup file
+#   be used, and no remote fetch will be done.
 #
 # Actions:
 #   - fetch data via ssh
@@ -77,7 +78,7 @@ define oxid::sshFetchRemoteData (
 
   if defined(Oxid::Conf["oxid"]) {
     Oxid::Conf["oxid"] ~> Oxid::SshFetchRemoteData[$name]
-  }  
+  }
 
   if $backup_dir != undef {
     if !defined(Class[oxid::package::packer]) {
@@ -148,7 +149,7 @@ define oxid::sshFetchRemoteData (
       shop_dir => $shop_dir,
       timeout  => $timeout,
       notify   => defined(Oxid::FileCheck["oxid"]) ? {
-        true    =>  Oxid::FileCheck["oxid"],
+        true    => Oxid::FileCheck["oxid"],
         default => undef
       }
     }
@@ -176,7 +177,8 @@ define oxid::sshFetchRemoteData (
 #   - timeout            timeout. Default is 18000.
 #   - backup_dir         if defined, this define fetch data to a backup file first.
 #   - compression        compression for backup file. gzip, bzip or none are supported. Default is 'gzip'.
-#   - purge              if set to true, existing backup file is purged and a new remote fetch will be execute. Otherwise the backup file be used, and no remote fetch will be done.
+#   - purge              if set to true, existing backup file is purged and a new remote fetch will be execute. Otherwise the backup
+#   file be used, and no remote fetch will be done.
 #
 #
 # Actions:
@@ -260,7 +262,6 @@ define oxid::sshFetchRemoteSQL (
     $dump_tables_str = $dump_tables
   }
 
-
   if $backup_dir != undef {
     if !defined(Class[oxid::package::packer]) {
       include oxid::package::packer
@@ -301,25 +302,35 @@ define oxid::sshFetchRemoteSQL (
       timeout => $timeout,
       require => Class["oxid::package::packer"]
     } ->
-    oxid::unpack { $archive:
-      destination => "${backup_dir}/${backup_file}.sql"
-    } ->
-    oxid::mysql::execFile { $name:
-      host        => $db_host,
-      port        => $db_port,
-      user        => $db_user,
-      db          => $db_name,
-      password    => $db_password,
-      source      => "${backup_dir}/${backup_file}.sql",
-      timeout     => $timeout,
+    oxid::unpack { $archive: destination => "${backup_dir}/${backup_file}.sql" } ->
+    mysql_import { "${backup_dir}/${backup_file}.sql":
+      db_host     => $db_host,
+      db_port     => $db_port,
+      db_user     => $db_user,
+      db_password => $db_password,
+      db_name     => $db_name,
       notify      => defined(Oxid::UpdateViews["oxid"]) ? {
         true    => Oxid::UpdateViews["oxid"],
         default => undef
       }
-    } -> 
+    } ->
+    /*  oxid::mysql::execFile { $name:
+     * host        => $db_host,
+     * port        => $db_port,
+     * user        => $db_user,
+     * db          => $db_name,
+     * password    => $db_password,
+     * source      => "${backup_dir}/${backup_file}.sql",
+     * timeout     => $timeout,
+     * notify      => defined(Oxid::UpdateViews["oxid"]) ? {
+     *   true    => Oxid::UpdateViews["oxid"],
+     *   default => undef
+     *}
+     * } ->
+     */ 
     exec { "rm -f '${backup_dir}/${backup_file}.sql'":
-        path    => $oxid::params::path,
-        unless  => "test -e '${backup_dir}/${backup_file}.sql'"
+      path   => $oxid::params::path,
+      unless => "test -e '${backup_dir}/${backup_file}.sql'"
     }
 
     if $purge {

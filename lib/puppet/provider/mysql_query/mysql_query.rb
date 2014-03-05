@@ -21,7 +21,7 @@ Puppet::Type.type(:mysql_query).provide(:ruby) do
     command = [resource[:mysql_bin]]
     command.push("--default-character-set=#{resource[:db_charset]}") if resource[:db_charset]
     command.push("--host=#{resource[:db_host]}") if resource[:db_host]
-    command.push("--port=#{resource[:db_cport]}") if resource[:db_port]
+    command.push("--port=#{resource[:db_port]}") if resource[:db_port]
     command.push("--user=#{resource[:db_user]}") if resource[:db_user]
     command.push("--password=#{resource[:db_password]}") if resource[:db_password]
     command.push("--database=#{resource[:db_name]}") if resource[:db_name]

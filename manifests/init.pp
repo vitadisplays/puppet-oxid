@@ -128,6 +128,10 @@ class oxid (
     Class['mysql::server'] -> Oxid::Mysql::Initdb["${name}: init database ${db_name}"]
   }
 
+  if !defined(Class[::mysql::client]) {
+    include ::mysql::client
+  }
+
   if defined(Package['mysql_client']) {
     Package['mysql_client'] -> Oxid::Mysql::Initdb["${name}: init database ${db_name}"]
   }
@@ -142,6 +146,15 @@ class oxid (
 
   if defined(Service['httpd']) {
     Class[oxid] ~> Service['httpd']
+  }
+
+  if ($extra_db_setup_sqls != undef) {
+    validate_array($extra_db_setup_sqls)
+  }
+
+  $setup_sql_files = $extra_db_setup_sqls ? {
+    undef   => [$db_setup_sql],
+    default => concat([$db_setup_sql], $extra_db_setup_sqls)
   }
 
   oxid::fileCheck { $name:
@@ -248,14 +261,22 @@ class oxid (
    * grant_password => $db_password
    * } ->
    */
-  oxid::mysql::execFile { "${name}: setup database ${db_name}":
-    source   => "${shop_dir}/${db_setup_sql}",
-    host     => $db_host,
-    db       => $db_name,
-    user     => $db_user,
-    password => $db_password,
-    charset  => $sql_charset
-  } ->
+  /* oxid::mysql::execFile { "${name}: setup database ${db_name}":
+   * source   => "${shop_dir}/${db_setup_sql}",
+   * host     => $db_host,
+   * db       => $db_name,
+   * user     => $db_user,
+   * password => $db_password,
+   * charset  => $sql_charset
+   * } ->
+   */
+  mysql_import { $setup_sql_files:
+    db_host     => $db_host,
+    db_user     => $db_user,
+    db_password => $db_password,
+    db_name     => $db_name,
+    require     => Class[::mysql::client]
+  }
   oxid::htaccess { $name:
     shop_dir           => $shop_dir,
     source             => $htaccess_source,
@@ -281,17 +302,18 @@ class oxid (
     notify             => Oxid::UpdateViews[$name]
   }
 
-  if $extra_db_setup_sqls != undef {
-    $extra_sql_files = prefix($extra_db_setup_sqls, "${shop_url}/")
-
-    oxid::mysql::execFile { $extra_sql_files:
-      host     => $db_host,
-      db       => $db_name,
-      user     => $db_user,
-      password => $db_password,
-      charset  => $sql_charset,
-      require  => Oxid::Mysql::ExecFile["${name}: setup database ${db_name}"],
-      notify   => Oxid::UpdateViews[$name]
-    }
-  }
+  /* if $extra_db_setup_sqls != undef {
+   * $extra_sql_files = prefix($extra_db_setup_sqls, "${shop_url}/")
+   *
+   * oxid::mysql::execFile { $extra_sql_files:
+   * host     => $db_host,
+   * db       => $db_name,
+   * user     => $db_user,
+   * password => $db_password,
+   * charset  => $sql_charset,
+   * require  => Oxid::Mysql::ExecFile["${name}: setup database ${db_name}"],
+   * notify   => Oxid::UpdateViews[$name]
+   *}
+   *}
+   */
 }

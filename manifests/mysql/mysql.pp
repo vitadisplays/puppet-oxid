@@ -112,16 +112,13 @@ define oxid::mysql::dropdb (
   }
 }*/
 
-define oxid::mysql::execFile (
+/*define oxid::mysql::execFile (
   $db,
   $host        = $oxid::mysql::params::default_host,
   $port        = $oxid::mysql::params::default_port,
   $user        = $oxid::mysql::params::default_user,
   $password,
   $source      = undef,
-  /*$extract_cmd = undef,
-  $unless      = undef,
-  $cwd         = undef,*/
   $charset     = undef,
   $timeout     = 300) {
   if $source != undef {
@@ -134,45 +131,6 @@ define oxid::mysql::execFile (
     include ::mysql::client
   }
 
-  /*$extra_options = $charset ? {
-    undef   => "",
-    default => " --default-character-set=${charset}"
-  }
-
-  if $extract_cmd != undef {
-    if !defined(Class[oxid::package::packer]) {
-      include oxid::package::packer
-    }
-
-    exec { "${name}: ${extract_cmd} < ${source} | mysql${extra_options} --host='${host}' --port=$port --user='${user}' --password='******' '${db}'"
-    :
-      command => "${extract_cmd} < ${source} | mysql${extra_options} --host='${host}' --port=$port --user='${user}' --password='${password}' '${db}'",
-      path    => $oxid::params::path,
-      unless  => $unless,
-      cwd     => $cwd,
-      timeout => $timeout,
-      require => Class[::mysql::client, oxid::package::packer]
-    }
-    
-    mysql_exec {$name: 
-      host => $host,
-      port => $port,
-      user => $user,
-      password => $password,
-      file => $myfile,
-      charset => $charset,
-      require => Class[::mysql::client, oxid::package::packer]      
-    }
-  } else {
-    exec { "${name}: mysql${extra_options} --host='${host}' --port=$port --user='${user}' --password='******' '${db}' < ${myfile}":
-      command => "mysql${extra_options} --host='${host}' --port=$port --user='${user}' --password='${password}' '${db}' < ${myfile}",
-      path    => $oxid::params::path,
-      unless  => $unless,
-      cwd     => $cwd,
-      timeout => $timeout,
-      require => Class[::mysql::client]
-    }
-  }*/
   
   mysql_import { $myfile:
     db_host     => $host,
@@ -183,16 +141,15 @@ define oxid::mysql::execFile (
     db_charset  => $charset,
     require  => Class[::mysql::client]
   }
-}
+}*/
 
-define oxid::mysql::execDirectory (
+/*define oxid::mysql::execDirectory (
   $db,
   $host      = $oxid::mysql::params::default_host,
   $port      = $oxid::mysql::params::default_port,
   $user      = $oxid::mysql::params::default_user,
   $password,
   $directory = undef,
-  $pattern   = "*.sql",
   $charset   = undef,
   $timeout   = 300) {
   if $directory != undef {
@@ -205,19 +162,6 @@ define oxid::mysql::execDirectory (
     include ::mysql::client
   }
 
-  /*$extra_options = $charset ? {
-    undef   => "",
-    default => " --default-character-set=${charset}"
-  }
-
-  exec { "${name}: find '${mydir}' -iname '${pattern}' | while read i; do mysql${extra_options} --host='${host}' --port=$port --user='${user}' --password='******' '${db}' < \"\$i\" ; done"
-  :
-    command => "find '${mydir}' -iname '${pattern}' | while read i; do mysql${extra_options} --host='${host}' --port=$port --user='${user}' --password='${password}' '${db}' < \"\$i\" ; done",
-    path    => $oxid::params::path,
-    timeout => $timeout,
-    require => Class[::mysql::client]
-  }*/
-
   mysql_import { $mydir:
     db_host     => $host,
     db_port     => $port,
@@ -227,9 +171,9 @@ define oxid::mysql::execDirectory (
     db_charset  => $charset,
     require  => Class[::mysql::client]
   }
-}
+}*/
 
-define oxid::mysql::execSQL (
+/*define oxid::mysql::execSQL (
   $db,
   $host    = $oxid::mysql::params::default_host,
   $port    = $oxid::mysql::params::default_port,
@@ -246,21 +190,14 @@ define oxid::mysql::execSQL (
   if !defined(Class[::mysql::client]) {
     include ::mysql::client
   }
-
-  /*exec { "${myquery}":
-    command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' '${db}' -e \"${myquery}\"",
-    path    => $oxid::params::path,
-    unless  => $unless,
-    timeout => $timeout,
-    require => Class[::mysql::client]
-  }*/
   
   mysql_query { $myquery:
     db_host     => $host,
     db_port     => $port,
     db_user     => $user,
     db_password => $password,
+    db_name => $db,
     require  => Class[::mysql::client]
   }
-}
+}*/
 

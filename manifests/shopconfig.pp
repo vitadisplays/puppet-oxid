@@ -7,14 +7,23 @@ define oxid::shopConfigS (
   $user     = $oxid::params::db_user,
   $password = $oxid::params::db_password) {
   $_req = defined(Class[oxid]) ? {
-    true    => Class[oxid],
-    default => undef
+    true    => [Class[::mysql::client], Class[oxid]],
+    default => Class[::mysql::client]
   }
 
   $value = $configs[$name]
   $query = "UPDATE oxshops SET ${name}='${value}' WHERE oxid = '${shopid}'"
 
-  oxid::mysql::execSQL { "${name}: ${query}":
+  mysql_query { $query:
+    db_host     => $host,
+    db_port     => $port,
+    db_user     => $user,
+    db_password => $password,
+    db_name => $db,
+    require  => $_req
+  }
+  
+  /*oxid::mysql::execSQL { "${name}: ${query}":
     query    => $query,
     host     => $host,
     db       => $db,
@@ -22,7 +31,7 @@ define oxid::shopConfigS (
     user     => $user,
     password => $password,
     require  => $_req
-  }
+  }*/
 }
 
 # Define: oxid::shopConfig

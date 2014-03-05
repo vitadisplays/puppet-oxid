@@ -5,11 +5,15 @@ Puppet::Type.newtype(:mysql_import) do
     isnamevar
   end
 
-  newproperty(:path) do
+  newproperty(:files) do
     desc 'The SQL command to execute via mysql.'
 
     defaultto { @resource[:name] }
 
+    def change_to_s(currentvalue, newvalue)
+      "executed successfully"
+    end
+    
     def sync(refreshing = false)
       if (!@resource.refreshonly? || refreshing)
         super()
@@ -19,6 +23,11 @@ Puppet::Type.newtype(:mysql_import) do
     end
   end
 
+  newparam(:pattern) do
+    desc "The pattern for directory mode"
+    defaultto("*.sql")
+  end
+  
   newparam(:db_host) do
     desc "The mysql host"
     defaultto("localhost")
@@ -44,7 +53,6 @@ Puppet::Type.newtype(:mysql_import) do
   
   newparam(:db_charset) do
     desc "The mysql charset under which the sql command should be executed."
-    defaultto("latin1")
   end
   
   newparam(:mysql_bin) do

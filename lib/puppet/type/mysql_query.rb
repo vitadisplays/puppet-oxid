@@ -16,6 +16,10 @@ Puppet::Type.newtype(:mysql_query) do
       else
         nil
       end
+    end    
+
+    def change_to_s(currentvalue, newvalue)
+      "executed successfully"
     end
   end
 
@@ -44,7 +48,6 @@ Puppet::Type.newtype(:mysql_query) do
   
   newparam(:db_charset) do
     desc "The mysql charset under which the sql command should be executed."
-    defaultto("latin1")
   end
   
   newparam(:mysql_bin) do
