@@ -275,8 +275,9 @@ class oxid (
     db_user     => $db_user,
     db_password => $db_password,
     db_name     => $db_name,
+    cwd         => $shop_dir,
     require     => Class[::mysql::client]
-  }
+  } ->
   oxid::htaccess { $name:
     shop_dir           => $shop_dir,
     source             => $htaccess_source,

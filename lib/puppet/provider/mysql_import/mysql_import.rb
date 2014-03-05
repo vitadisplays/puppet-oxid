@@ -9,21 +9,19 @@ Puppet::Type.type(:mysql_import).provide(:ruby) do
   end
 
   def files=(val)
-  	if val.is_a?(Array)
-		run_files_command(val)
-  	else
+  	val.each { |file|
 		if resource[:cwd]
 	      Dir.chdir resource[:cwd] do
-	      	files = Dir.glob(val)
+	      	files = Dir.glob(file)
 	      	
 	      	run_files_command(files)
 	      end
 	    else
-	      	files = Dir.glob(val)
+	      	files = Dir.glob(file)
 	      	
 	      	run_files_command(files)
-	    end
-	end	    
+	    end  	
+  	}	    
   end
 
   def run_files_command(files)

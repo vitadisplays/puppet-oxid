@@ -277,7 +277,7 @@ define oxid::update (
         db_user     => $user,
         db_password => $db_password,
         db_name     => $db_name,
-        require     => Class[::mysql::client]
+        require     => [Class[::mysql::client], Oxid::Repository::Unpack["${name}: ${mysource}"]]
       }
 
       /* oxid::mysql::execDirectory { "${name}: update database from ${sql_dir}":
@@ -308,6 +308,7 @@ define oxid::update (
         }
         'after'  : {
           Mysql_import ["${sql_dir}/*.sql"] -> Exec[$cmds[2]]
+          
         }
         default  : {
           Oxid::Repository::Unpack["${name}: ${mysource}"] -> Mysql_import ["${sql_dir}/*.sql"]
