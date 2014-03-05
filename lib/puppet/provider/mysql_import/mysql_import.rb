@@ -31,7 +31,9 @@ Puppet::Type.type(:mysql_import).provide(:ruby) do
 		if status != 0
       		self.fail("Error executing SQL; mysql returned #{status}: '#{output}'")
       	else
-      		self.info("SQL File #{file} successfully executed")
+      		if files.count > 1
+      			self.notice("SQL File #{file} successfully executed")
+      		end
    		end
   	}
   end
