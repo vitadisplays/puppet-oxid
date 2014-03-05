@@ -1,51 +1,23 @@
-Puppet::Type.type(:mysql_import).provide(:ruby) do
-
-  def path()
+Puppet::Type.type(:mysql_query).provide(:ruby) do
+  desc "Executes a mysql query"
+  
+  def command()
 	  if (resource.refreshonly?)
-	    return resource[:path]
+	    return resource[:command]
 	  end
 	  
 	  return nil
   end
 
-  def path=(val)
-  	if File.file?("val")
-  		output, status = run_file_command(val)
+  def command=(val)
+    output, status = run_sql_command(val)
 
-    	if status != 0
-      		self.fail("Error executing SQL; mysql returned #{status}: '#{output}'")
-   		 end  
-  	elif File.directory?("val")
-  		pattern = "*.sql"
-  		if resource[:pattern]
-  			pattern = resource[:pattern]
-  		end
-
-		if resource[:cwd]
-	      Dir.chdir resource[:cwd] do
-	      	Dir.glob("#{val}/#{pattern}") do |file|
-		  		output, status = run_file_command(file)
-		
-		    	if status != 0
-		      		self.fail("Error executing SQL; mysql returned #{status}: '#{output}'")
-		   		 end
-			end
-	      end
-	    else
-	      	Dir.glob("#{val}/#{pattern}") do |file|
-		  		output, status = run_file_command(file)
-		
-		    	if status != 0
-		      		self.fail("Error executing SQL; mysql returned #{status}: '#{output}'")
-		   		 end
-			end
-	    end
-   	else
-   		self.fail("#{val} is not a file or directroy.")
-  	end
+    if status != 0
+      self.fail("Error executing SQL; mysql returned #{status}: '#{output}'")
+    end
   end
 
-  def run_file_command(file)
+  def run_sql_command(sql)
     command = [resource[:mysql_bin]]
     command.push("--default-character-set=#{resource[:db_charset]}") if resource[:db_charset]
     command.push("--host=#{resource[:db_host]}") if resource[:db_host]
@@ -54,7 +26,7 @@ Puppet::Type.type(:mysql_import).provide(:ruby) do
     command.push("--password=#{resource[:db_password]}") if resource[:db_password]
     command.push("--database=#{resource[:db_name]}") if resource[:db_name]
     
-    command.push("< #{file}")
+    command.push("-e", sql)
 
     if resource[:cwd]
       Dir.chdir resource[:cwd] do
@@ -70,6 +42,8 @@ Puppet::Type.type(:mysql_import).provide(:ruby) do
       Puppet::Util::SUIDManager.run_and_capture(command, user, group)
     else
       output = Puppet::Util::Execution.execute(command, {
+      	:user => user,
+      	:group => group,
         :failonfail => false,
         :combine => true,
         :override_locale => true,

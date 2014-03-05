@@ -1,5 +1,3 @@
-include mysql_exec
-
 define oxid::mysql::initdb (
   $db,
   $host           = $oxid::mysql::params::default_host,

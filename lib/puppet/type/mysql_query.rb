@@ -1,11 +1,11 @@
 Puppet::Type.newtype(:mysql_query) do
-
+  
   newparam(:name) do
     desc "An arbitrary tag for your own reference; the name of the message."
     isnamevar
   end
 
-  newproperty(:query) do
+  newproperty(:command) do
     desc 'The SQL command to execute via mysql.'
 
     defaultto { @resource[:name] }
@@ -75,7 +75,7 @@ Puppet::Type.newtype(:mysql_query) do
   end
 
   def refresh()
-    self.property(:query).sync(true)
+    self.property(:command).sync(true)
   end
 
 end
