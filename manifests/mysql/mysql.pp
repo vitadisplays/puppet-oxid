@@ -25,18 +25,17 @@ define oxid::mysql::initdb (
     include ::mysql::client
   }
   
-  mysql_query { $name:
-    host     => $host,
-    port     => $port,
-    user     => $user,
-    password => $password,
-    query     => "DROP DATABASE IF EXISTS ${db}; CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation}; GRANT ${grant_privs} ON ${db}.* TO ${real_grant_user}@${grant_host} IDENTIFIED BY '${real_grant_password}'; FLUSH PRIVILEGES;",
-    charset  => $charset,
+  mysql_query { "DROP DATABASE IF EXISTS ${db}; CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation}; GRANT ${grant_privs} ON ${db}.* TO ${real_grant_user}@${grant_host} IDENTIFIED BY '${real_grant_password}'; FLUSH PRIVILEGES;":
+    db_host     => $host,
+    db_port     => $port,
+    db_user     => $user,
+    db_password => $password,
+    db_charset  => $charset,
     require  => Class[::mysql::client]
   }
 }
 
-define oxid::mysql::createdb (
+/*define oxid::mysql::createdb (
   $db,
   $host    = $oxid::mysql::params::default_host,
   $port    = $oxid::mysql::params::default_port,
@@ -49,11 +48,6 @@ define oxid::mysql::createdb (
     include ::mysql::client
   }
 
-  /*exec { "${name}: mysql create ${db} on ${host} with collate ${collation} and charset ${charset}":
-    path    => $oxid::params::path,
-    command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' -e \"CREATE DATABASE ${db} CHARACTER SET ${charset} COLLATE ${collation}\"",
-    require => Class[::mysql::client]
-  }*/
 
   mysql_query { $name:
     host     => $host,
@@ -89,11 +83,6 @@ define oxid::mysql::grantdb (
     include ::mysql::client
   }
 
-  /*exec { "${name}: mysql grant ${grant_privs} on ${db}.* to  ${real_grant_user}@${grant_host}":
-    command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' -e \"GRANT ${grant_privs} ON ${db}.* TO ${real_grant_user}@${grant_host} IDENTIFIED BY '${real_grant_password}'; FLUSH PRIVILEGES;\"",
-    path    => $oxid::params::path,
-    require => Class[::mysql::client]
-  }*/
   
   mysql_query { $name:
     host     => $host,
@@ -114,12 +103,6 @@ define oxid::mysql::dropdb (
   if !defined(Class[::mysql::client]) {
     include ::mysql::client
   }
-
-  /*exec { "${name}: mysql drop ${db} on ${host}":
-    path    => $oxid::params::path,
-    command => "mysql --host='${host}' --port=$port --user='${user}' --password='${password}' -e \"DROP DATABASE IF EXISTS ${db};\"",
-    require => Class[::mysql::client]
-  }*/
   
   mysql_query { $name:
     host     => $host,
@@ -129,7 +112,7 @@ define oxid::mysql::dropdb (
     query     => "DROP DATABASE IF EXISTS ${db};",
     require  => Class[::mysql::client]
   }
-}
+}*/
 
 define oxid::mysql::execFile (
   $db,
@@ -193,14 +176,13 @@ define oxid::mysql::execFile (
     }
   }*/
   
-  mysql_query { $name:
-    host     => $host,
-    port     => $port,
-    user     => $user,
-    password => $password,
-    database => $db,
-    file     => $myfile,
-    charset  => $charset,
+  mysql_import { $myfile:
+    db_host     => $host,
+    db_port     => $port,
+    db_user     => $user,
+    db_password => $password,
+    db_name => $db,
+    db_charset  => $charset,
     require  => Class[::mysql::client]
   }
 }
@@ -238,14 +220,13 @@ define oxid::mysql::execDirectory (
     require => Class[::mysql::client]
   }*/
 
-  mysql_query { $name:
-    host     => $host,
-    port     => $port,
-    user     => $user,
-    password => $password,
-    database => $db,
-    directory     => $mydir,
-    charset  => $charset,
+  mysql_import { $mydir:
+    db_host     => $host,
+    db_port     => $port,
+    db_user     => $user,
+    db_password => $password,
+    db_name => $db,
+    db_charset  => $charset,
     require  => Class[::mysql::client]
   }
 }
@@ -276,13 +257,11 @@ define oxid::mysql::execSQL (
     require => Class[::mysql::client]
   }*/
   
-  mysql_query { $name:
-    host     => $host,
-    port     => $port,
-    user     => $user,
-    password => $password,
-    database => $db,
-    query     => $myquery,
+  mysql_query { $myquery:
+    db_host     => $host,
+    db_port     => $port,
+    db_user     => $user,
+    db_password => $password,
     require  => Class[::mysql::client]
   }
 }
