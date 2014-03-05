@@ -5,7 +5,7 @@ Puppet::Type.newtype(:mysql_import) do
     isnamevar
   end
 
-  newproperty(:files) do
+  newproperty(:files, array_matching => :all) do
     desc 'The SQL command to execute via mysql.'
 
     defaultto { @resource[:name] }
