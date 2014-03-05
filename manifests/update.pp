@@ -292,25 +292,25 @@ define oxid::update (
 
       case $copy_this {
         'before' : {
-          Exec[$cmds[1]] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"]
+          Exec[$cmds[1]] -> Mysql_import ["${sql_dir}/*.sql"]
         }
         'after'  : {
-          Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"] -> Exec[$cmds[1]]
+          Mysql_import ["${sql_dir}/*.sql"] -> Exec[$cmds[1]]
         }
         default  : {
-          Oxid::Repository::Unpack["${name}: ${mysource}"] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"]
+          Oxid::Repository::Unpack["${name}: ${mysource}"] -> Mysql_import ["${sql_dir}/*.sql"]
         }
       }
 
       case $changed_full {
         'before' : {
-          Exec[$cmds[2]] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"]
+          Exec[$cmds[2]] -> Mysql_import ["${sql_dir}/*.sql"]
         }
         'after'  : {
-          Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"] -> Exec[$cmds[2]]
+          Mysql_import ["${sql_dir}/*.sql"] -> Exec[$cmds[2]]
         }
         default  : {
-          Oxid::Repository::Unpack["${name}: ${mysource}"] -> Oxid::Mysql::ExecDirectory["${name}: update database from ${sql_dir}"]
+          Oxid::Repository::Unpack["${name}: ${mysource}"] -> Mysql_import ["${sql_dir}/*.sql"]
         }
       }
 
