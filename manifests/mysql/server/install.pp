@@ -36,7 +36,7 @@ class oxid::mysql::server::install (
   }
 
   $default_users = {
-    "${oxid::params::db_user}@%" => {
+    "${oxid::params::db_user}@${oxid::params::db_host}" => {
       ensure                   => 'present',
       max_connections_per_hour => '0',
       max_queries_per_hour     => '0',
@@ -47,12 +47,12 @@ class oxid::mysql::server::install (
   }
 
   $default_grants = {
-    "${oxid::params::db_user}@%/${oxid::params::db_name}.*" => {
+    "${oxid::params::db_user}@${oxid::params::db_host}/${oxid::params::db_name}.*" => {
       ensure     => 'present',
       options    => ['GRANT'],
       privileges => ['ALL'],
       table      => "${oxid::params::db_name}.*",
-      user       => "${oxid::params::db_user}@%",
+      user       => "${oxid::params::db_user}@${oxid::params::db_host}",
     }
   }
   

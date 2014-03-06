@@ -26,7 +26,7 @@ import "updateViews.pp"
 #   - db_port                       Oxid database port. Default 3306.
 #   - db_name                       Oxid database name. Default "oxid".
 #   - db_user                       Oxid database user. Default "oxid".
-#   - db_password                   Oxid database password. Default "oxid".
+#   - db_password                   Oxid database password. Required.
 #   - shop_url                      Oxid shop url. Default "http://${hostname}"
 #   - shop_ssl_url                  Oxid shop ssl url. Default is undef.
 #   - admin_ssl_url                 Oxid admin ssl url. Default is undef.

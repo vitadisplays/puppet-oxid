@@ -25,7 +25,7 @@ import "php/zendguardloader.pp"
 #   - db_port                   Oxid database port. Default 3306.
 #   - db_name                   Oxid database name. Default "oxid".
 #   - db_user                   Oxid database user. Default "oxid".
-#   - db_password               Oxid database password. Default "oxid".
+#   - db_password               Oxid database password. Required.
 #   - shop_url                  Oxid shop url. Default "http://${hostname}"
 #   - shop_ssl_url              Oxid shop ssl url. Default is undef.
 #   - admin_ssl_url             Oxid admin ssl url. Default is undef.
@@ -90,7 +90,7 @@ class oxid (
   $db_port             = $::oxid::params::db_port,
   $db_name             = $::oxid::params::db_name,
   $db_user             = $::oxid::params::db_user,
-  $db_password         = $::oxid::params::db_password,
+  $db_password,
   $shop_url            = $::oxid::params::shop_url,
   $shop_ssl_url        = $::oxid::params::shop_ssl_url,
   $admin_ssl_url       = $::oxid::params::admin_ssl_url,
