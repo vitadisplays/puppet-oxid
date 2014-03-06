@@ -1,3 +1,0 @@
-class oxid::mysql::params {
-
-}

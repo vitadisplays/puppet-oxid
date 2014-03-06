@@ -117,7 +117,6 @@ define oxid::update (
   $timeout          = 900) {
   include 'stdlib'
   include ::oxid::apache::params
-  include oxid::mysql::params
 
   Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |>
 

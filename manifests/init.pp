@@ -114,7 +114,6 @@ class oxid (
   $sql_charset         = $oxid::params::default_charset) inherits ::oxid::params {
   include 'stdlib'
   include ::oxid::apache::params
-  include oxid::mysql::params
 
   validate_array($db_setup_sqls)
   
