@@ -18,7 +18,8 @@
 #    password => "secret"
 #  }
 class oxid::mysql::server::install (
-  $password,
+  $root_password,
+  $old_root_password = $mysql::params::old_root_password,
   $override_options = undef,
   $users            = undef,
   $grants           = undef,
@@ -57,7 +58,8 @@ class oxid::mysql::server::install (
   }
   
   class { 'mysql::server':
-    root_password    => $password,
+    root_password    => $root_password,
+    old_root_password    => $old_root_password,
     override_options        => $override_options ? {
       undef   => $default_override_options,
       default => $override_options

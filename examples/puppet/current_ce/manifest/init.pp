@@ -8,7 +8,7 @@
 #
 oxid::repository::config::wget { "oxidce": url => "http://download.oxid-esales.com/ce" }
 
-class { 'oxid::mysql::server::install': password => "secret" }
+class { 'oxid::mysql::server::install': root_password => "secret" }
 
 class { 'oxid::php::install': }
 

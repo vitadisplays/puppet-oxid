@@ -28,7 +28,7 @@ oxid::repository::config::wget { "oxidee": url => $configurations['oxideeReposit
 
 # MySQL Server install
 class { 'oxid::mysql::server::install':
-  password => $configurations['mysql_password']
+  root_password => $configurations['mysql_password']
 }
 
 # PHP install
