@@ -22,6 +22,7 @@ import "php/zendguardloader.pp"
 #   - compile_dir               The oxid compile directroy. Default is "/srv/www/oxid/tmp"
 #   - db_type                   Default is mysql and is the only supported type.
 #   - db_host                   Oxid database host. Default "localhost".
+#   - db_port                   Oxid database port. Default 3306.
 #   - db_name                   Oxid database name. Default "oxid".
 #   - db_user                   Oxid database user. Default "oxid".
 #   - db_password               Oxid database password. Default "oxid".
@@ -30,8 +31,6 @@ import "php/zendguardloader.pp"
 #   - admin_ssl_url             Oxid admin ssl url. Default is undef.
 #   - utf8_mode                 Oxid UTF8 Mode. 0 for latin1 and 1 for UTF8. Default is 0.
 #   - sql_charset               The charset of the sql files. Default latin1.
-#   - mysql_user                MySQL User to prepare database. Default is "root".
-#   - mysql_password            MySQL password. Default is ""
 #   - rewrite_base              Rewrite Base in the .htaccess file. Default is "/"
 #   - config_content            Your own oxyid configuration content. Default is undef.
 #   - htaccess_content          Your own htaccess configuration content. Default is undef.
@@ -73,8 +72,6 @@ import "php/zendguardloader.pp"
 #     db_password         => "secret",
 #     shop_ssl_url        => "https://myhostname",
 #     admin_ssl_url       => "https://myhostname/admin",
-#     mysql_user          => "root",
-#     mysql_password      => "secret",
 #     extra_db_setup_sqls => ["setup/sql/demodata.sql"]
 #   }
 #
@@ -90,6 +87,7 @@ class oxid (
   $compile_dir         = $::oxid::params::compile_dir,
   $db_type             = $::oxid::params::db_type,
   $db_host             = $::oxid::params::db_host,
+  $db_port             = $::oxid::params::db_port,
   $db_name             = $::oxid::params::db_name,
   $db_user             = $::oxid::params::db_user,
   $db_password         = $::oxid::params::db_password,
@@ -97,8 +95,6 @@ class oxid (
   $shop_ssl_url        = $::oxid::params::shop_ssl_url,
   $admin_ssl_url       = $::oxid::params::admin_ssl_url,
   $utf8_mode           = $::oxid::params::utf8_mode,
-  $mysql_user          = $::oxid::params::mysql_user,
-  $mysql_password      = $::oxid::params::mysql_password,
   $rewrite_base        = $::oxid::params::rewrite_base,
   $config_content      = undef,
   $htaccess_content    = undef,
@@ -110,7 +106,7 @@ class oxid (
   $htaccess_extra_replacements = {
   }
   ,
-  $db_setup_sql        = "setup/sql/database.sql",
+  $db_setup_sqls        = ["setup/sql/database.sql"],
   $extra_db_setup_sqls = undef,
   $owner               = $apache::params::user,
   $group               = $apache::params::group,
@@ -120,6 +116,8 @@ class oxid (
   include ::oxid::apache::params
   include oxid::mysql::params
 
+  validate_array($db_setup_sqls)
+  
   Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[oxid]
 
   Class[oxid] -> Oxid::Theme <| |> -> Oxid::Module <| |>
@@ -147,16 +145,7 @@ class oxid (
   if defined(Service['httpd']) {
     Class[oxid] ~> Service['httpd']
   }
-
-  if ($extra_db_setup_sqls != undef) {
-    validate_array($extra_db_setup_sqls)
-  }
-
-  $setup_sql_files = $extra_db_setup_sqls ? {
-    undef   => [$db_setup_sql],
-    default => concat([$db_setup_sql], $extra_db_setup_sqls)
-  }
-
+  
   oxid::fileCheck { $name:
     shop_dir    => $shop_dir,
     compile_dir => $compile_dir,
@@ -196,7 +185,7 @@ class oxid (
     destination => $shop_dir,
     password    => $source_password
   } ->
-  oxid::mysql::initdb { "${name}: init database ${db_name}":
+  /*oxid::mysql::initdb { "${name}: init database ${db_name}":
     host           => $db_host,
     db             => $db_name,
     user           => $mysql_user ? {
@@ -217,60 +206,8 @@ class oxid (
     },
     grant_user     => $db_user,
     grant_password => $db_password
-  } ->
-  /* oxid::mysql::dropdb { "${name}: drop database":
-   * host     => $db_host,
-   * db       => $db_name,
-   * user     => $mysql_user ? {
-   * undef   => $db_user,
-   * default => $mysql_user
-   * },
-   * password => $mysql_password ? {
-   * undef   => $db_password,
-   * default => $mysql_password
-   *}
-   * } ->
-   * oxid::mysql::createdb { "${name}: create database ${db_name}":
-   * host     => $db_host,
-   * db       => $db_name,
-   * user     => $mysql_user ? {
-   * undef   => $db_user,
-   * default => $mysql_user
-   * },
-   * password => $mysql_password ? {
-   * undef   => $db_password,
-   * default => $mysql_password
-   * },
-   * charset  => $utf8_mode ? {
-   * 1       => 'utf8',
-   * default => 'latin1'
-   *}
-   * } ->
-   * oxid::mysql::grantdb { "${name}: grant database ${db_name}":
-   * host           => $db_host,
-   * db             => $db_name,
-   * user           => $mysql_user ? {
-   * undef   => $db_user,
-   * default => $mysql_user
-   * },
-   * password       => $mysql_password ? {
-   * undef   => $db_password,
-   * default => $mysql_password
-   * },
-   * grant_user     => $db_user,
-   * grant_password => $db_password
-   * } ->
-   */
-  /* oxid::mysql::execFile { "${name}: setup database ${db_name}":
-   * source   => "${shop_dir}/${db_setup_sql}",
-   * host     => $db_host,
-   * db       => $db_name,
-   * user     => $db_user,
-   * password => $db_password,
-   * charset  => $sql_charset
-   * } ->
-   */
-  mysql_import { $setup_sql_files:
+  } ->*/
+  mysql_import { $db_setup_sqls:
     db_host     => $db_host,
     db_user     => $db_user,
     db_password => $db_password,
@@ -302,19 +239,4 @@ class oxid (
     extra_replacements => $config_extra_replacements,
     notify             => Oxid::UpdateViews[$name]
   }
-
-  /* if $extra_db_setup_sqls != undef {
-   * $extra_sql_files = prefix($extra_db_setup_sqls, "${shop_url}/")
-   *
-   * oxid::mysql::execFile { $extra_sql_files:
-   * host     => $db_host,
-   * db       => $db_name,
-   * user     => $db_user,
-   * password => $db_password,
-   * charset  => $sql_charset,
-   * require  => Oxid::Mysql::ExecFile["${name}: setup database ${db_name}"],
-   * notify   => Oxid::UpdateViews[$name]
-   *}
-   *}
-   */
 }

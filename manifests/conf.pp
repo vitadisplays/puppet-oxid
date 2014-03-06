@@ -98,7 +98,6 @@ define oxid::configureConfig (
   $shop_ssl_url       = $oxid::params::shop_ssl_url,
   $admin_ssl_url      = $oxid::params::admin_ssl_url,
   $utf8_mode          = $oxid::params::utf8_mode,
-  $mysql_user         = $oxid::params::mysql_user,
   $extra_replacements = {
   }
 ) {

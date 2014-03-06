@@ -12,12 +12,12 @@ Puppet::Type.type(:mysql_import).provide(:ruby) do
   	val.each { |file|
 		if resource[:cwd]
 	      Dir.chdir resource[:cwd] do
-	      	files = Dir.glob(file)
+	      	files = Dir.glob(file).sort
 	      	
 	      	run_files_command(files)
 	      end
 	    else
-	      	files = Dir.glob(file)
+	      	files = Dir.glob(file).sort
 	      	
 	      	run_files_command(files)
 	    end  	

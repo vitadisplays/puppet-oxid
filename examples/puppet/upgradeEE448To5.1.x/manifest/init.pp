@@ -50,15 +50,15 @@ class { oxid448To465: configurations => $configurations } ->
 class { oxid465To500: configurations => $configurations } ->
 class { oxid500To51x: configurations => $configurations } ->
 # Alter Tables statements, to add columns not included in the update path. May be changed or comment out for your requirements!
-oxid::mysql::execSQL { [
-  "ALTER TABLE oxcategories ADD COLUMN OXTHUMB_1 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB;ALTER TABLE oxcategories ADD COLUMN OXTHUMB_2 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB_1; ALTER TABLE oxcategories ADD COLUMN OXTHUMB_3 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB_2",
-  "ALTER TABLE oxactions ADD COLUMN OXPIC_1 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXPIC; ALTER TABLE oxactions ADD COLUMN OXPIC_2 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXPIC_1;ALTER TABLE oxactions ADD COLUMN OXPIC_3 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXPIC_2;",
-  "ALTER TABLE oxactions ADD COLUMN OXLINK_1 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXLINK; ALTER TABLE oxactions ADD COLUMN OXLINK_2 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXLINK_1;ALTER TABLE oxactions ADD COLUMN OXLINK_3 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXLINK_2;"
-  ]:
-  host     => $configurations['dbHost'],
-  db       => $configurations['dbName'],
-  user     => $configurations['dbUser'],
-  password => $configurations['dbPwd'],
+mysql_query { 
+  "ALTER TABLE oxcategories ADD COLUMN OXTHUMB_1 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB;ALTER TABLE oxcategories ADD COLUMN OXTHUMB_2 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB_1; ALTER TABLE oxcategories ADD COLUMN OXTHUMB_3 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB_2;
+ ALTER TABLE oxactions ADD COLUMN OXPIC_1 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXPIC; ALTER TABLE oxactions ADD COLUMN OXPIC_2 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXPIC_1;ALTER TABLE oxactions ADD COLUMN OXPIC_3 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXPIC_2;
+  ALTER TABLE oxactions ADD COLUMN OXLINK_1 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXLINK; ALTER TABLE oxactions ADD COLUMN OXLINK_2 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXLINK_1;ALTER TABLE oxactions ADD COLUMN OXLINK_3 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXLINK_2;"
+  :
+  db_host     => $configurations['dbHost'],
+  db_name       => $configurations['dbName'],
+  db_user     => $configurations['dbUser'],
+  db_password => $configurations['dbPwd'],
 }
 
 # Oxid EE 4.4.8 install Class with remote data.
@@ -77,8 +77,6 @@ class oxid448 ($configurations, $keyfile) {
     db_password    => $configurations['dbPwd'],
     shop_ssl_url   => $configurations['sSSLShopURL'],
     admin_ssl_url  => $configurations['sAdminSSLURL'],
-    mysql_user     => $configurations['mysql_user'],
-    mysql_password => $configurations['mysql_password'],
     purge          => true,
   }
   

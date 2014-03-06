@@ -8,7 +8,7 @@
 #
 oxid::repository::config::wget { "oxidce": url => "http://download.oxid-esales.com/ce" }
 
-class { 'oxid::mysql::server::install': password => "oxid" }
+class { 'oxid::mysql::server::install': password => "secret" }
 
 class { 'oxid::php::install': }
 
@@ -31,14 +31,11 @@ class { oxid:
   db_password         => "oxid",
   shop_ssl_url        => "https://${hostname}",
   admin_ssl_url       => "https://${hostname}/admin",
-  mysql_user          => "root",
-  mysql_password      => "oxid",
   extra_db_setup_sqls => ["setup/sql/demodata.sql"]
 }
 
 oxid::shopConfig { 'oxid':
   host     => "localhost",
-  port     => 3306,
   db       => "oxid",
   user     => "oxid",
   password => "oxid",

@@ -23,6 +23,7 @@ import "updateViews.pp"
 #   - compile_dir                   The oxid compile directroy. Default is "/srv/www/oxid/tmp"
 #   - db_type                       Default is mysql and is the only supported type.
 #   - db_host                       Oxid database host. Default "localhost".
+#   - db_port                       Oxid database port. Default 3306.
 #   - db_name                       Oxid database name. Default "oxid".
 #   - db_user                       Oxid database user. Default "oxid".
 #   - db_password                   Oxid database password. Default "oxid".
@@ -38,9 +39,6 @@ import "updateViews.pp"
 #   - config_extra_replacements     Extra replacements for oxid configuration. Example:
 #   {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }. Default is undef.
 #   - htaccess_extra_replacements   Extra replacements for htaccess. Default is undef.
-#   - db_setup_sql                  The setup file to execute. By default "setup/sql/database.sql". Default is undef.
-#   - extra_db_setup_sqls           Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For
-#   Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]. Default is undef.
 #   - owner                         The owner of the directories. Default see $apache::params::user.
 #   - group                         The group of the directories. Default see $apache::params::group.
 #   - copy_this                     before or after update process to copy all files from the copy_this directory to the shop
@@ -86,6 +84,7 @@ define oxid::update (
   $compile_dir      = $oxid::params::compile_dir,
   $db_type          = $oxid::params::db_type,
   $db_host          = $oxid::params::db_host,
+  $db_port          = $oxid::params::db_port,
   $db_name          = $oxid::params::db_name,
   $db_user          = $oxid::params::db_user,
   $db_password      = $oxid::params::db_password,
@@ -93,8 +92,6 @@ define oxid::update (
   $shop_ssl_url     = $oxid::params::shop_ssl_url,
   $admin_ssl_url    = $oxid::params::admin_ssl_url,
   $utf8_mode        = $oxid::params::utf8_mode,
-  $mysql_user       = $oxid::params::mysql_user,
-  $mysql_password   = $oxid::params::mysql_password,
   $rewrite_base     = $oxid::params::rewrite_base,
   $config_content   = undef,
   $htaccess_content = undef,
@@ -274,7 +271,8 @@ define oxid::update (
 
       mysql_import { "${sql_dir}/*.sql":
         db_host     => $db_host,
-        db_user     => $user,
+        db_port     => $db_port,
+        db_user     => $db_user,
         db_password => $db_password,
         db_name     => $db_name,
         require     => [Class[::mysql::client], Oxid::Repository::Unpack["${name}: ${mysource}"]]

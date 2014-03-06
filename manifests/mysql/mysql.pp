@@ -1,8 +1,8 @@
-define oxid::mysql::initdb (
+/*define oxid::mysql::initdb (
   $db,
-  $host           = $oxid::mysql::params::default_host,
-  $port           = $oxid::mysql::params::default_port,
-  $user           = $oxid::mysql::params::default_user,
+  $host           = $oxid::params::db_host,
+  $port           = $oxid::params::db_port,
+  $user           = $oxid::params::db_user,
   $password,
   $charset = $oxid::mysql::params::default_db_charset,
   $collation = $oxid::mysql::params::default_db_collation,
@@ -31,7 +31,7 @@ define oxid::mysql::initdb (
     db_charset  => $charset,
     require  => Class[::mysql::client]
   }
-}
+}*/
 
 /*define oxid::mysql::createdb (
   $db,

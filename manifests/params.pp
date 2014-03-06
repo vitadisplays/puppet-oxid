@@ -12,16 +12,13 @@ class oxid::params {
   $db_port = 3306
   $db_name = "oxid"
   $db_user = "oxid"
-  $db_password = "oxid"
+  $db_password = generate_password(10)
 
   $default_charset = "latin1"
 
   $utf8_mode = 0
 
   $rewrite_base = "/"
-
-  $mysql_user = "root"
-  $mysql_password = ""
 
   $default_shopid = ''
   $config_key = 'fq45QS09_fqyx09239QQ'
