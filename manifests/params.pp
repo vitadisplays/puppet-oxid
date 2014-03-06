@@ -12,7 +12,7 @@ class oxid::params {
   $db_port = 3306
   $db_name = "oxid"
   $db_user = "oxid"
-  $db_password = generate_password(10)
+  $db_password = "oxid"
 
   $default_charset = "latin1"
 

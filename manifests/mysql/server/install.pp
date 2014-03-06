@@ -19,24 +19,24 @@
 #  }
 class oxid::mysql::server::install (
   $password,
-  $override_options = $oxid::mysql::server::params::override_options,
-  $charset          = $oxid::mysql::server::params::latin_db_charset,
-  $collate          = $oxid::mysql::server::params::latin_db_collation,
+  $override_options = undef,
   $users            = undef,
   $grants           = undef,
   $databases        = undef) inherits oxid::mysql::server::params {
   include oxid::params
 
+  $default_override_options = $oxid::mysql::server::params::override_options
+  
   $default_databases = {
     "${oxid::params::db_name}" => {
       ensure  => 'present',
-      charset => $charset,
-      collate => $collate
+      charset => $oxid::mysql::server::params::latin_db_charset,
+      collate => $oxid::mysql::server::params::latin_db_collation
     }
   }
 
   $default_users = {
-    "${oxid::params::db_user}@*" => {
+    "${oxid::params::db_user}@%" => {
       ensure                   => 'present',
       max_connections_per_hour => '0',
       max_queries_per_hour     => '0',
@@ -47,18 +47,21 @@ class oxid::mysql::server::install (
   }
 
   $default_grants = {
-    "${oxid::params::db_user}@*/${oxid::params::db_name}.*" => {
+    "${oxid::params::db_user}@%/${oxid::params::db_name}.*" => {
       ensure     => 'present',
       options    => ['GRANT'],
       privileges => ['ALL'],
       table      => "${oxid::params::db_name}.*",
-      user       => "${oxid::params::db_user}@*",
+      user       => "${oxid::params::db_user}@%",
     }
   }
   
   class { 'mysql::server':
     root_password    => $password,
-    override_options => $override_options,
+    override_options        => $override_options ? {
+      undef   => $default_override_options,
+      default => $override_options
+    },    
     databases        => $databases ? {
       undef   => $default_databases,
       default => $databases
