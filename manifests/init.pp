@@ -123,7 +123,7 @@ class oxid (
   Class[oxid] -> Oxid::Theme <| |> -> Oxid::Module <| |>
 
   if defined(Class['mysql::server']) {
-    Class['mysql::server'] -> Oxid::Mysql::Initdb["${name}: init database ${db_name}"]
+    Class['mysql::server'] -> Class[oxid]
   }
 
   if !defined(Class[::mysql::client]) {
@@ -131,7 +131,7 @@ class oxid (
   }
 
   if defined(Package['mysql_client']) {
-    Package['mysql_client'] -> Oxid::Mysql::Initdb["${name}: init database ${db_name}"]
+    Package['mysql_client'] -> Class[oxid]
   }
 
   if defined(Class['::apache']) {
