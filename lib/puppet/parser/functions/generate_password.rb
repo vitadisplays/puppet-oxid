@@ -1,5 +1,3 @@
-require 'securerandom'
-
 module Puppet::Parser::Functions
     newfunction(:generate_password, :type => :rvalue) do |*arguments|
 	    arguments = arguments.shift if arguments.first.is_a?(Array)
@@ -22,6 +20,10 @@ module Puppet::Parser::Functions
 	        'integer value to work with'
 	    end       
     
-    	return SecureRandom.urlsafe_base64(size)
+    	chars = ("a".."z").to_a + ("A".."Z").to_a + ("0".."9").to_a
+		newpass = ""
+		1.upto(size) { |i| newpass << chars[rand(chars.size-1)] }
+		
+    	return newpass
     end
 end
