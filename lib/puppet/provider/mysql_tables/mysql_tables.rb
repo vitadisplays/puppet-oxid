@@ -56,16 +56,6 @@ Puppet::Type.type(:mysql_tables).provide(:ruby) do
   	end
   end
 
-  def get_entries
-  	if resource[:tables]
-  		return resource[:tables]
-  	elsif resource[:query]
-  		return get_entries_by_query(resource[:query])
-  	else
-  		return get_entries_by_query("show tables")
-  	end
-  end
- 
   def get_entries_by_query(query)
   	output, status = run_sql_command(query, '-B -N')
   	
@@ -83,13 +73,12 @@ Puppet::Type.type(:mysql_tables).provide(:ruby) do
    
   def run_sql_command(sql, options = nil)
     command = [resource[:mysql_bin]]
+    command.push(options) if options
     command.push("--host=#{resource[:db_host]}") if resource[:db_host]
     command.push("--port=#{resource[:db_port]}") if resource[:db_port]
     command.push("--user=#{resource[:db_user]}") if resource[:db_user]
     command.push("--password=#{resource[:db_password]}") if resource[:db_password]
-    command.push("--database=#{resource[:db_name]}") if resource[:db_name]
-    
-    command.push(options) if options
+    command.push("--database=#{resource[:db_name]}")  
     
     command.push("-e", sql)
 
