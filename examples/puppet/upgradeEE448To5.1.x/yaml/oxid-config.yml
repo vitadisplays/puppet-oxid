@@ -1,8 +1,8 @@
 oxideeRepository: http://myhost/development/oxid/ee
 sRewriteBase: /
-remoteDBName: oxid
-remoteDBUser: oxid-readonly user
-remoteDBPwd: secret password
+remoteDbName: oxid
+remoteDbUser: oxid-readonly user
+remoteDbPwd: secret password
 remotePath: /srv/www/oxid
 dbHost: localhost
 dbName: oxid

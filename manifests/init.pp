@@ -106,17 +106,17 @@ class oxid (
   $htaccess_extra_replacements = {
   }
   ,
-  $db_setup_sqls        = ["setup/sql/database.sql"],
+  $db_setup_sqls       = ["setup/sql/database.sql"],
   $extra_db_setup_sqls = undef,
   $owner               = $apache::params::user,
   $group               = $apache::params::group,
-  $purge               = false,
+  $purge               = true,
   $sql_charset         = $oxid::params::default_charset) inherits ::oxid::params {
   include 'stdlib'
   include ::oxid::apache::params
 
   validate_array($db_setup_sqls)
-  
+
   Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[oxid]
 
   Class[oxid] -> Oxid::Theme <| |> -> Oxid::Module <| |>
@@ -144,7 +144,7 @@ class oxid (
   if defined(Service['httpd']) {
     Class[oxid] ~> Service['httpd']
   }
-  
+
   oxid::fileCheck { $name:
     shop_dir    => $shop_dir,
     compile_dir => $compile_dir,
@@ -166,6 +166,16 @@ class oxid (
       onlyif  => "test -d '${shop_dir}'",
       before  => Exec["${name}: make dir ${shop_dir}"]
     }
+
+    mysql_tables { $name:
+      command     => "drop",
+      db_host     => $db_host,
+      db_port     => $db_port,
+      db_user     => $db_user,
+      db_password => $db_password,
+      db_name     => $db_name,
+      before      => Mysql_import[$db_setup_sqls]
+    }
   }
 
   exec { "${name}: make dir ${shop_dir}":
@@ -184,30 +194,32 @@ class oxid (
     destination => $shop_dir,
     password    => $source_password
   } ->
-  /*oxid::mysql::initdb { "${name}: init database ${db_name}":
-    host           => $db_host,
-    db             => $db_name,
-    user           => $mysql_user ? {
-      undef   => $db_user,
-      default => $mysql_user
-    },
-    password       => $mysql_password ? {
-      undef   => $db_password,
-      default => $mysql_password
-    },
-    charset        => $utf8_mode ? {
-      1       => 'utf8',
-      default => 'latin1'
-    },
-    collation      => $utf8_mode ? {
-      1       => 'utf8_general_ci',
-      default => 'latin1_general_ci'
-    },
-    grant_user     => $db_user,
-    grant_password => $db_password
-  } ->*/
+  /* oxid::mysql::initdb { "${name}: init database ${db_name}":
+   * host           => $db_host,
+   * db             => $db_name,
+   * user           => $mysql_user ? {
+   * undef   => $db_user,
+   * default => $mysql_user
+   * },
+   * password       => $mysql_password ? {
+   * undef   => $db_password,
+   * default => $mysql_password
+   * },
+   * charset        => $utf8_mode ? {
+   * 1       => 'utf8',
+   * default => 'latin1'
+   * },
+   * collation      => $utf8_mode ? {
+   * 1       => 'utf8_general_ci',
+   * default => 'latin1_general_ci'
+   * },
+   * grant_user     => $db_user,
+   * grant_password => $db_password
+   * } ->
+   */
   mysql_import { $db_setup_sqls:
     db_host     => $db_host,
+    db_port     => $db_port,
     db_user     => $db_user,
     db_password => $db_password,
     db_name     => $db_name,

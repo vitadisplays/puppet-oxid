@@ -31,7 +31,7 @@ class { oxid:
   db_password         => "oxid",
   shop_ssl_url        => "https://${hostname}",
   admin_ssl_url       => "https://${hostname}/admin",
-  extra_db_setup_sqls => ["setup/sql/demodata.sql"]
+  db_setup_sqls  => ["setup/sql/database.sql", "setup/sql/demodata.sql"]
 }
 
 oxid::shopConfig { 'oxid':

@@ -9,7 +9,7 @@
 # - Setting some option in the oxshop table.
 #
 
-#Key file to act with remote host
+# Key file to act with remote host
 $keyfile = "/vagrant_data/vitadisplays_rsa"
 
 # Common configurations
@@ -21,15 +21,12 @@ $configurations['sSSLShopURL'] = "https://${hostname}"
 $configurations['sAdminSSLURL'] = "https://${hostname}/admin"
 
 # Local repository
-/*oxid::repository::config::file { "oxidee": root => $configurations['oxideeRepository'] } ->*/
+/* oxid::repository::config::file { "oxidee": root => $configurations['oxideeRepository'] } -> */
 
 # Remote repository
 oxid::repository::config::wget { "oxidee": url => $configurations['oxideeRepository'] } ->
-
 # MySQL Server install
-class { 'oxid::mysql::server::install':
-  root_password => $configurations['mysql_password']
-}
+class { 'oxid::mysql::server::install': root_password => $configurations['mysql_password'] }
 
 # PHP install
 class { 'oxid::php::install':
@@ -45,41 +42,42 @@ class { 'oxid::apache::install':
 }
 
 # Oxid Install and updates
-class { oxid448: configurations => $configurations , keyfile => $keyfile} ->
+class { oxid448:
+  configurations => $configurations,
+  keyfile        => $keyfile
+} ->
 class { oxid448To465: configurations => $configurations } ->
 class { oxid465To500: configurations => $configurations } ->
 class { oxid500To51x: configurations => $configurations } ->
 # Alter Tables statements, to add columns not included in the update path. May be changed or comment out for your requirements!
-mysql_query { 
-  "ALTER TABLE oxcategories ADD COLUMN OXTHUMB_1 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB;ALTER TABLE oxcategories ADD COLUMN OXTHUMB_2 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB_1; ALTER TABLE oxcategories ADD COLUMN OXTHUMB_3 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB_2;
+mysql_query { "ALTER TABLE oxcategories ADD COLUMN OXTHUMB_1 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB;ALTER TABLE oxcategories ADD COLUMN OXTHUMB_2 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB_1; ALTER TABLE oxcategories ADD COLUMN OXTHUMB_3 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXTHUMB_2;
  ALTER TABLE oxactions ADD COLUMN OXPIC_1 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXPIC; ALTER TABLE oxactions ADD COLUMN OXPIC_2 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXPIC_1;ALTER TABLE oxactions ADD COLUMN OXPIC_3 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXPIC_2;
   ALTER TABLE oxactions ADD COLUMN OXLINK_1 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXLINK; ALTER TABLE oxactions ADD COLUMN OXLINK_2 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXLINK_1;ALTER TABLE oxactions ADD COLUMN OXLINK_3 VARCHAR(128) NOT NULL DEFAULT '' AFTER OXLINK_2;"
-  :
+:
   db_host     => $configurations['dbHost'],
-  db_name       => $configurations['dbName'],
+  db_name     => $configurations['dbName'],
   db_user     => $configurations['dbUser'],
   db_password => $configurations['dbPwd'],
 }
 
 # Oxid EE 4.4.8 install Class with remote data.
-# Dump tables will be fetch dynamically from the remote database by a sql statement, excluding all views. 
+# Dump tables will be fetch dynamically from the remote database by a sql statement, excluding all views.
 # Remove also all Modules from Database, by removing aModule oxvarname.
 class oxid448 ($configurations, $keyfile) {
-  
   class { oxid:
-    source         => "OXID_ESHOP_EE_4.4.8_34028_for_PHP5.3.zip",
-    repository     => "oxidee",
-    shop_dir       => $configurations['sShopDir'],
-    compile_dir    => $configurations['sCompileDir'],
-    db_host        => $configurations['dbHost'],
-    db_name        => $configurations['dbName'],
-    db_user        => $configurations['dbUser'],
-    db_password    => $configurations['dbPwd'],
-    shop_ssl_url   => $configurations['sSSLShopURL'],
-    admin_ssl_url  => $configurations['sAdminSSLURL'],
-    purge          => true,
+    source        => "OXID_ESHOP_EE_4.4.8_34028_for_PHP5.3.zip",
+    repository    => "oxidee",
+    shop_dir      => $configurations['sShopDir'],
+    compile_dir   => $configurations['sCompileDir'],
+    db_host       => $configurations['dbHost'],
+    db_name       => $configurations['dbName'],
+    db_user       => $configurations['dbUser'],
+    db_password   => $configurations['dbPwd'],
+    shop_ssl_url  => $configurations['sSSLShopURL'],
+    admin_ssl_url => $configurations['sAdminSSLURL'],
+    purge         => true,
   }
-  
+
   oxid::shopConfig { $name:
     shopid   => 1,
     host     => $configurations['dbHost'],
@@ -94,7 +92,7 @@ class oxid448 ($configurations, $keyfile) {
       "oxorderemail"  => "technik@vitadisplays.com",
       "oxowneremail"  => "technik@vitadisplays.com",
     }
-  }  
+  }
 
   file { $keyfile:
     ensure => present,
@@ -110,20 +108,20 @@ class oxid448 ($configurations, $keyfile) {
     db_user            => $configurations['DBUser'],
     db_password        => $configurations['DBPwd'],
     keyfile            => $keyfile,
-    remote_db_name     => $configurations['remoteDBName'],
-    remote_db_user     => $configurations['remoteDBUser'],
-    remote_db_password => $configurations['remoteDBPwd'],
-    dump_tables        => "$(mysql --user='${configurations['remoteDBUser']}' --password='${configurations['remoteDBPwd']}' -B -N -e \"Select TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = '\\''${configurations
+    remote_db_name     => $configurations['remoteDbName'],
+    remote_db_user     => $configurations['remoteDbUser'],
+    remote_db_password => $configurations['remoteDbPwd'],
+    dump_tables        => "$(mysql --user='${configurations['remoteDbUser']}' --password='${configurations['remoteDBPwd']}' -B -N -e \"Select TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = '\\''${configurations
       ['remoteDBName']}'\\'' AND TABLE_TYPE != '\\''VIEW'\\''\" | grep -v Tables_in | xargs)",
     dump_options       => $oxid::params::default_remote_dump_options_latin1
   }
 
-  oxid::mysql::execSQL { "DELETE FROM oxconfig WHERE oxvarname IN ('aModules');":
-    host     => $configurations['dbHost'],
-    db       => $configurations['dbName'],
-    user     => $configurations['dbUser'],
-    password => $configurations['dbPwd'],
-    require  => Class[oxid]
+  mysql_query { "ALTER TABLE oxnewssubscribed DROP OXTIMESTAMP":
+    db_host     => $configurations['dbHost'],
+    db_name     => $configurations['dbName'],
+    db_user     => $configurations['dbUser'],
+    db_password => $configurations['dbPwd'],
+    require     => Class[oxid]
   }
 }
 
@@ -132,11 +130,11 @@ class oxid448 ($configurations, $keyfile) {
 class oxid448To465 ($configurations) {
   # remove some contents to run succesfully 34028.sql in UPDATE_OXID_ESHOP_EE_V.4.4.8_34028_TO_V.4.6.5_49955_for_PHP5.3.zip. Also
   # change 34028.sql last statement (user oxshops.oxid except 1 as oxshopid, if you have several shops)
-  oxid::mysql::execSQL { "DELETE FROM oxcontents WHERE oxloadid IN ('oxrighttocancellegend2')":
-    host     => $configurations['dbHost'],
-    db       => $configurations['dbName'],
-    user     => $configurations['dbUser'],
-    password => $configurations['dbPwd'],
+  mysql_query { "DELETE FROM oxcontents WHERE oxloadid IN ('oxrighttocancellegend2')":
+    db_host     => $configurations['dbHost'],
+    db_name     => $configurations['dbName'],
+    db_user     => $configurations['dbUser'],
+    db_password => $configurations['dbPwd']
   } ->
   oxid::update { $name:
     shop_dir      => $configurations['sShopDir'],
@@ -155,7 +153,8 @@ class oxid448To465 ($configurations) {
 }
 
 # Upgrade from 4.6.5 to 5.0.0
-# Advance CLI upgrade with moving shop and reinstall new one, see http://wiki.oxidforge.org/Tutorials/Update_from_4.6.5_to_4.7.0_or_5.0.0
+# Advance CLI upgrade with moving shop and reinstall new one, see
+# http://wiki.oxidforge.org/Tutorials/Update_from_4.6.5_to_4.7.0_or_5.0.0
 class oxid465To500 ($configurations) {
   $shop_dir = $configurations['sShopDir']
   $bakupdir = "${configurations['sShopDir']}_bak"
@@ -178,19 +177,19 @@ class oxid465To500 ($configurations) {
     shop_dir    => $configurations['sShopDir'],
     compile_dir => $configurations['sCompileDir']
   } ->
-  oxid::mysql::execSQL { "ALTER TABLE oxnewssubscribed DROP OXTIMESTAMP":
-    host     => $configurations['dbHost'],
-    db       => $configurations['dbName'],
-    user     => $configurations['dbUser'],
-    password => $configurations['dbPwd'],
+  mysql_query { "ALTER TABLE oxnewssubscribed DROP OXTIMESTAMP":
+    db_host     => $configurations['dbHost'],
+    db_name     => $configurations['dbName'],
+    db_user     => $configurations['dbUser'],
+    db_password => $configurations['dbPwd']
   } ->
   exec { "cp -r -f ${bakupdir}/out/pictures/* ${configurations['sShopDir']}/out/pictures/":
     path    => "/usr/bin:/usr/sbin:/bin",
     timeout => 0
   } ->
-  # make an upgrade in sql mode without modyfing themes etc. Have problems in cli mode.  
+  # make an upgrade in sql mode without modyfing themes etc. Have problems in cli mode.
   oxid::update { $name:
-    run_method      => "sql",
+    run_method    => "sql",
     shop_dir      => $configurations['sShopDir'],
     compile_dir   => $configurations['sCompileDir'],
     db_host       => $configurations['dbHost'],
