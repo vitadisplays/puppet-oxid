@@ -23,6 +23,7 @@ Puppet::Type.type(:mysql_tables).provide(:ruby) do
   	views = get_entries_by_query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_TYPE = 'VIEW' AND TABLE_SCHEMA = '#{resource[:db_name]}';")
   	
 	if val == 'delete'
+		deleted = []
   		entries.each { |e|
   			stmt = "DELETE * FROM #{e} WHERE 1=1;"
   			if views.include? e
@@ -33,11 +34,17 @@ Puppet::Type.type(:mysql_tables).provide(:ruby) do
 			    if status != 0
 			      self.fail("Error executing '#{stmt}'; mysql returned #{status}: '#{output}'")
 			     else
-			      self.notice("Table '{e}' entries purged.")
+			      deleted.push(e)
 			    end
   			end  			
-  		}  	
+  		}
+  		
+  		if deleted.count > 0
+  			self.notice("Rows of Table '#{deleted.join(', ')}' deleted.")
+  		end  	
   	else
+  		dropped = []
+  		
   		entries.each { |e|
   			stmt = "DROP TABLE IF EXISTS #{e};"
   			if views.include? e
@@ -49,9 +56,13 @@ Puppet::Type.type(:mysql_tables).provide(:ruby) do
 		    if status != 0
 		      self.fail("Error executing '#{stmt}'; mysql returned #{status}: '#{output}'")
 		     else
-		      self.notice("Table/View '{e}' dropped.")
+		      dropped.push(e)
 		    end  			
   		}
+  		
+  		if dropped.count > 0
+  			self.notice("Table '#{dropped.join(', ')}' dropped.")
+  		end
   	end
   end
 
