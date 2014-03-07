@@ -17,7 +17,7 @@ import "php/zendguardloader.pp"
 #
 #   - source                    The location of the setup archive in the defined repository. Required.
 #   - repository                The repository to get from. Default is local file use.
-#   - purge                     If true, deletes the shop dir. Default is true.
+#   - purge                     If true, deletes the shop dir and all tables/views in database. Default is true.
 #   - shop_dir                  The oxid shop directroy. Default is "/srv/www/oxid"
 #   - compile_dir               The oxid compile directroy. Default is "/srv/www/oxid/tmp"
 #   - db_type                   Default is mysql and is the only supported type.
