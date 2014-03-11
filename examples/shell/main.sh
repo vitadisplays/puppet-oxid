@@ -11,7 +11,7 @@ fi
 # Puppetfile
 #
 # Add ref for specified git version
-# mod 'oxid', :git => 'https://github.com/vitadisplays/puppet-oxid.git', :ref => '0.0.1'
+# mod 'oxid', :git => 'https://github.com/vitadisplays/puppet-oxid.git', :ref => '0.0.3'
 #
 # If unsing sources from puppet forge:
 # forge "http://forge.puppetlabs.com"
@@ -26,7 +26,7 @@ fi
 # mod 'camptocamp/augeas', '>= 0.0.1'
 #
 cat <<'EOF' > $PUPPET_DIR/Puppetfile
-mod 'oxid', :git => 'https://github.com/vitadisplays/puppet-oxid.git', :ref => 'dev0.0.3'
+mod 'oxid', :git => 'https://github.com/vitadisplays/puppet-oxid.git'
 EOF
 
 # NB: librarian-puppet might need git installed. If it is not already installed
