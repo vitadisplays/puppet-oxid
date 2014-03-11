@@ -37,7 +37,7 @@ class oxid::mysql::server::install (
   }
 
   $default_users = {
-    "${oxid::params::db_user}@${oxid::params::db_host}" => {
+    "${oxid::params::db_user}@localhost" => {
       ensure                   => 'present',
       max_connections_per_hour => '0',
       max_queries_per_hour     => '0',
@@ -53,7 +53,7 @@ class oxid::mysql::server::install (
       options    => ['GRANT'],
       privileges => ['ALL'],
       table      => "${oxid::params::db_name}.*",
-      user       => "${oxid::params::db_user}@${oxid::params::db_host}",
+      user       => "${oxid::params::db_user}@localhost",
     }
   }
   

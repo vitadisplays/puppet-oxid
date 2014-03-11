@@ -26,7 +26,7 @@ fi
 # mod 'camptocamp/augeas', '>= 0.0.1'
 #
 cat <<'EOF' > $PUPPET_DIR/Puppetfile
-mod 'oxid', :git => 'https://github.com/vitadisplays/puppet-oxid.git'
+mod 'oxid', :git => 'https://github.com/vitadisplays/puppet-oxid.git', :ref => 'dev0.0.3'
 EOF
 
 # NB: librarian-puppet might need git installed. If it is not already installed

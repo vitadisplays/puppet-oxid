@@ -8,6 +8,7 @@
 # - Upgrade to 5.1.x
 # - Setting some option in the oxshop table.
 #
+# Confugure Vagrantfile and add oxid-config.yml file with your configurations.
 
 # Key file to act with remote host
 $keyfile = "/vagrant_data/vitadisplays_rsa"
@@ -81,7 +82,6 @@ class oxid448 ($configurations, $keyfile) {
   oxid::shopConfig { $name:
     shopid   => 1,
     host     => $configurations['dbHost'],
-    port     => $configurations['mysql_port'],
     db       => $configurations['dbName'],
     user     => $configurations['dbUser'],
     password => $configurations['dbPwd'],
@@ -216,7 +216,7 @@ class oxid500To51x ($configurations) {
     db_password   => $configurations['dbPwd'],
     shop_ssl_url  => $configurations['sSSLShopURL'],
     admin_ssl_url => $configurations['sAdminSSLURL'],
-    source        => "UPDATE_OXID_ESHOP_EE_V.5.0.0_TO_V.5.1.1_for_PHP_5.3.zip",
+    source        => "UPDATE_OXID_ESHOP_EE_V.5.0.0_TO_V.5.1.4_for_PHP_5.3.zip",
     repository    => "oxidee",
     answers       => ["2"]
   } ->

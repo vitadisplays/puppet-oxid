@@ -30,7 +30,6 @@ import "php/zendguardloader.pp"
 #   - shop_ssl_url              Oxid shop ssl url. Default is undef.
 #   - admin_ssl_url             Oxid admin ssl url. Default is undef.
 #   - utf8_mode                 Oxid UTF8 Mode. 0 for latin1 and 1 for UTF8. Default is 0.
-#   - sql_charset               The charset of the sql files. Default latin1.
 #   - rewrite_base              Rewrite Base in the .htaccess file. Default is "/"
 #   - config_content            Your own oxyid configuration content. Default is undef.
 #   - htaccess_content          Your own htaccess configuration content. Default is undef.
@@ -39,8 +38,7 @@ import "php/zendguardloader.pp"
 #   - config_extra_replacements   Extra replacements for oxid configuration. Example:
 #   {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme= 'basic';" }. Default is undef.
 #   - htaccess_extra_replacements Extra replacements for htaccess. Default is undef.
-#   - db_setup_sql              The setup file to execute. By default "setup/sql/database.sql". Default is undef.
-#   - extra_db_setup_sqls       Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For
+#   - db_setup_sqls             The setup file to execute. Default is ["setup/sql/database.sql"]. Use ["setup/sql/database.sql", "setup/sql/demodata.sql"] to install also demodata. Ordering will be recordnized.
 #   Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"]. Default is undef.
 #   - owner                     The owner of the directories. Default see $apache::params::user.
 #   - group                     The group of the directories. Default see $apache::params::group.
@@ -71,8 +69,7 @@ import "php/zendguardloader.pp"
 #     db_user             => "oxid",
 #     db_password         => "secret",
 #     shop_ssl_url        => "https://myhostname",
-#     admin_ssl_url       => "https://myhostname/admin",
-#     extra_db_setup_sqls => ["setup/sql/demodata.sql"]
+#     admin_ssl_url       => "https://myhostname/admin"
 #   }
 #
 #   Creates a wget remote repository to the oxid community download location and installs an oxid community edition shop server with
@@ -110,8 +107,7 @@ class oxid (
   $extra_db_setup_sqls = undef,
   $owner               = $apache::params::user,
   $group               = $apache::params::group,
-  $purge               = true,
-  $sql_charset         = $oxid::params::default_charset) inherits ::oxid::params {
+  $purge               = true) inherits ::oxid::params {
   include 'stdlib'
   include ::oxid::apache::params
 

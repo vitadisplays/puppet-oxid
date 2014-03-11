@@ -144,9 +144,6 @@ oxid { "oxid":
   shop_ssl_url        => "https://myhostname",
   admin_ssl_url       => "https://myhostname/admin",
   utf8_mode           => 0,
-  sql_charset         => "latin1",
-  mysql_user          => "root",
-  mysql_password      => "oxid",
   rewrite_base        => "/",
   config_content      => undef,
   htaccess_content    => undef,
@@ -154,8 +151,7 @@ oxid { "oxid":
   htaccess_source     => undef,
   config_extra_replacements   => {},
   htaccess_extra_replacements => {},
-  db_setup_sql        => "setup/sql/database.sql",
-  extra_db_setup_sqls => undef,
+  db_setup_sql        => ["setup/sql/database.sql"],
   owner               => "www-data",
   group               => "www-data"
 }
@@ -178,9 +174,6 @@ The file config.inc.php and .htaccess file will be configure, by token replaceme
 	- shop_url						Oxid shop url
 	- shop_ssl_url					Oxid shop ssl url
 	- admin_ssl_url					Oxid admin ssl url
-	- sql_charset					The chaset of the sql files. Default latin1.
-	- mysql_user					MySQL User to prepare database
-	- mysql_password				MySQL password
 	- rewrite_base					Rewrite Base in the .htaccess file
 	- config_content				Your own oxyid configuration content
 	- htaccess_content				Your own htaccess configuration content	
@@ -188,8 +181,7 @@ The file config.inc.php and .htaccess file will be configure, by token replaceme
 	- htaccess_source				Your own oxid htaccess source
 	- config_extra_replacements		Extra replacements for oxid configuration. Example: {"\$this->sTheme[ ]*=[ ]*.*;" => "\$this->sTheme = 'basic';" }
 	- htaccess_extra_replacements	Extra replacements for htaccess
-	- db_setup_sql					The setup file to execute. By default "setup/sql/database.sql"
-	- extra_db_setup_sqls			Extra setup files to execute. e.g. ["setup/sql/demodata.sql"] will also install demo data. For Ordering use Oxid::Mysql::ExecFile["source1"] -> Oxid::Mysql::ExecFile["source2"] 
+	- db_setup_sqls					The setup file to execute. Default is ["setup/sql/database.sql"]. Use ["setup/sql/database.sql", "setup/sql/demodata.sql"] to install also demodata. Ordering will be recordnized.
 	- owner							The owner of the directories
 	- group							The group of the directories
 	  
@@ -274,9 +266,6 @@ oxid::update { "oxid448To465"
   shop_ssl_url        => "https://myhostname",
   admin_ssl_url       => "https://myhostname/admin",
   utf8_mode           => 0,
-  sql_charset         => "latin1",
-  mysql_user          => "root",
-  mysql_password      => "oxid",
   rewrite_base        => "/",
   config_content   	  => undef,
   htaccess_content 	  => undef,
@@ -337,7 +326,8 @@ oxid::update { "oxid448To465"
          "oxinfoemail" => "info@example.com",
          "oxorderemail" => "info@example.com",
          "oxowneremail" => "info@example.com",
-      } 
+      },
+      db_setup_sqls => ["setup/sql/database.sql", "setup/sql/demodata.sql"] 
    }
 ```
 
@@ -471,9 +461,7 @@ If you don't want the demo data, please remove extra_db_setup_sqls parameter fro
   	 db_password         => "oxid",
      shop_ssl_url        => "https://${hostname}",
   	 admin_ssl_url       => "https://${hostname}/admin",
-  	 mysql_user          => "root",
-     mysql_password      => "oxid",
-     extra_db_setup_sqls => ["setup/sql/demodata.sql"]
+	 db_setup_sqls 		 => ["setup/sql/database.sql", "setup/sql/demodata.sql"]
   }
 ```
 
