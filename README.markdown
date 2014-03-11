@@ -535,7 +535,7 @@ If no more needed, comment out config.vm.provision :shell in Vagrant file.
 	- Fetches sql dump from remote host
 	- Upgrade from 4.4.8 to 4.6.5 with source UPDATE_OXID_ESHOP_EE_V.4.4.8_34028_TO_V.4.6.5_49955_for_PHP5.3.zip
 	- Upgrade from 4.6.5 to 5.0.0 with source UPGRADE_OXID_ESHOP_EE_V.4.6.5_49955_TO_V.5.0.0_51243.zip. Some files may be upgraded by you, see init.pp class oxid448To465 for more details.
-	- Upgrade from 5.0.0 to 5.1.1 with source UPDATE_OXID_ESHOP_EE_V.5.0.0_TO_V.5.1.1_for_PHP_5.3.zip
+	- Upgrade from 5.0.0 to 5.1.4 with source UPDATE_OXID_ESHOP_EE_V.5.0.0_TO_V.5.1.4_for_PHP_5.3.zip
 	- Activate azure theme	
 
 ## Requirements
