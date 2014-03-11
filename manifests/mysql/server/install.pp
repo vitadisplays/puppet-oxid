@@ -19,7 +19,7 @@
 #  }
 class oxid::mysql::server::install (
   $root_password,
-  $old_root_password = $mysql::params::old_root_password,
+  $old_root_password = '',
   $override_options = undef,
   $users            = undef,
   $grants           = undef,
