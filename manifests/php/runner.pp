@@ -7,6 +7,7 @@ define oxid::php::runner (
   $group       = undef,
   $timeout     = 0,
   $output      = undef,
+  $returns     = 0,
   $refreshonly = false) {
   if defined(Class['php::apache']) {
     Class['php::apache'] -> Oxid::Php::Runner <| |>
@@ -48,6 +49,7 @@ define oxid::php::runner (
       user        => $user,
       group       => $group,
       timeout     => $timeout,
+      returns     => $returns,
       refreshonly => $refreshonly
     }
   }
@@ -59,6 +61,7 @@ define oxid::php::runner (
       user        => $user,
       group       => $group,
       timeout     => $timeout,
+      returns     => $returns,
       refreshonly => $refreshonly
     }
   }
