@@ -29,6 +29,6 @@ dependency 'puppetlabs/apache', '>= 0.10.0'
 dependency 'puppetlabs/concat', '>= 1.0.0'
 dependency 'puppetlabs/mysql', '>= 2.1.0'
 dependency 'maestrodev/wget', '>= 1.3.1'
-dependency 'nodes/php', '>= 0.7.0'
+dependency 'nodes/php', '0.7.0'
 dependency 'camptocamp/augeas', '>= 0.0.1'
 
