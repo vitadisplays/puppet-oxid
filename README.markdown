@@ -550,9 +550,11 @@ If no more needed, comment out config.vm.provision :shell in Vagrant file.
 	- puppetlabs/concat 1.0.0
 	
 ## Limitations
-	This has been tested on Ubuntu Precise.
-	Debian Debian Wheezy, CentOS 5.8, and FreeBSD 9.1 should work, because of the used dependencies.
-
+	This has been tested on Ubuntu Precise and Debian Wheezy.
+	Debian Wheezy, CentOS 5.8, and FreeBSD 9.1 should work, because of the used dependencies.
+	PHP version changes e.g from 5.3 to 5.4 may causes problems in Oxid EE Editions, because of the Zend Loader. When setup/upgrade in one big step, stay in one PHP version.
+	Also downgrading from PHP 5.4 to 5.3 may be an option e.g. for an big upgrade from Oxid EE 4.4.8 to current versions, but this is another story.
+	
 ## Todo
 	- Setting license information in PE/EE versions
 	- unattended utf8 update
