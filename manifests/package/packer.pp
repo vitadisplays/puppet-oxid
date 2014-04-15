@@ -27,8 +27,8 @@ class oxid::package::packer {
     }
   }
   
-    if !defined(Package["unrar"]) {
-    package { "unrar":
+    if !defined(Package["unrar-free"]) {
+    package { "unrar-free":
       ensure  => installed
     }
   }
