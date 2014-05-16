@@ -26,8 +26,6 @@ if (file_exists(getShopBasePath().'bootstrap.php')) {
 		}	    
 		
 		if ( $oModule-><%= @command %>() ) {
-			$this->_aViewData["updatenav"] = "1";
-			
 			$oCache = oxNew( 'oxcache' );
 			$oCache->reset();
 		}
