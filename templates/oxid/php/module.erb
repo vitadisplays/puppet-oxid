@@ -20,6 +20,10 @@ if (file_exists(getShopBasePath().'bootstrap.php')) {
 		$sModule = '<%= @name %>';
 		$oModule = oxNew('oxModule');
 		
+		if (is_numeric('<%= @$shopid %>')) {
+			$oModule->getConfig()->setShopId(<%= @$shopid %>);
+		}
+		
 		if (!$oModule->load($sModule)) {
 			echo "Can not load module ${sModule}.";
 			exit("Can not load module ${sModule}.");
