@@ -21,7 +21,7 @@ if (file_exists(getShopBasePath().'bootstrap.php')) {
 		$oModule = oxNew('oxModule');
 		
 		if (is_numeric('<%= @$shopid %>')) {
-			$oModule->getConfig()->setShopId(<%= @$shopid %>);
+			$oModule->getConfig()->setShopId(<%= @shopid %>);
 		}
 		
 		if (!$oModule->load($sModule)) {
