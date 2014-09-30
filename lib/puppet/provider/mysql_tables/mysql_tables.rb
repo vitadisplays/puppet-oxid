@@ -17,12 +17,36 @@ Puppet::Type.type(:mysql_tables).provide(:ruby) do
   	elsif resource[:query]
   		entries = get_entries_by_query(resource[:query])
   	else
-  		entries = get_entries_by_query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = '#{resource[:db_name]}';")
-  	end
+  		if val == 'optimize'
+  			entries = get_entries_by_query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = '#{resource[:db_name]}' AND Data_free > 0 AND ENGINE IN ('MyISAM','InnoDB','ARCHIVE');")
+  		else
+  			entries = get_entries_by_query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = '#{resource[:db_name]}';")
+  		end
+  	end	
   	
   	views = get_entries_by_query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_TYPE = 'VIEW' AND TABLE_SCHEMA = '#{resource[:db_name]}';")
   	
-	if val == 'delete'
+  	if val == 'optimize'
+  		optimize = []
+  		entries.each { |e|
+  			stmt = "OPTIMIZE TABLE #{e};"
+  			if views.include? e
+  				self.notice("View '{e}' optimizing skipped.")
+  			else
+  				output, status = run_sql_command(stmt)
+  			
+			    if status != 0
+			      self.fail("Error executing '#{stmt}'; mysql returned #{status}: '#{output}'")
+			     else
+			      optimize.push(e)
+			    end
+  			end  			
+  		}
+  		
+  		if optimize.count > 0
+  			self.notice("Table '#{optimize.join(', ')}' optimized.")
+  		end   	
+	elsif val == 'delete'		
 		deleted = []
   		entries.each { |e|
   			stmt = "DELETE * FROM #{e} WHERE 1=1;"
