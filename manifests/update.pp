@@ -118,7 +118,7 @@ define oxid::update (
   include 'stdlib'
   include ::oxid::apache::params
 
-  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |>
+  Oxid::Apache::Params <| |> -> Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |>
 
   if defined(Service['httpd']) {
     Oxid::Update[$name] ~> Service['httpd']
