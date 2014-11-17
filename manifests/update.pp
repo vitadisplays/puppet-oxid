@@ -119,8 +119,8 @@ define oxid::update (
 
   Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |>
 
-  if !defined(Class[apache::params]) {
-    class{apache::params:}
+  if !defined(Class[::apache::params]) {
+    class{::apache::params:}
   }
   
   class { ::oxid::apache::params: require => apache::params}
