@@ -115,12 +115,11 @@ define oxid::update (
   $fail_on_error    = true,
   $updateViews      = true,
   $timeout          = 900) {
-  include 'stdlib'
-  
+  include 'stdlib'  
 
   Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |>
 
-  if defined(!Class[apache::params]) {
+  if !defined(Class[apache::params]) {
     class{apache::params:}
   }
   
