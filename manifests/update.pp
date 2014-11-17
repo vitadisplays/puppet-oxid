@@ -124,7 +124,7 @@ define oxid::update (
   }
   
   if !defined(Class[::oxid::apache::params]) {
-    class { ::oxid::apache::params: require => apache::params}
+    class { ::oxid::apache::params: require => Class[::apache::params]}
   }
   
   if defined(Service['httpd']) {
