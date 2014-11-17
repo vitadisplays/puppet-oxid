@@ -123,7 +123,9 @@ define oxid::update (
     class{::apache::params:}
   }
   
-  class { ::oxid::apache::params: require => apache::params}
+  if !defined(Class[::oxid::apache::params]) {
+    class { ::oxid::apache::params: require => apache::params}
+  }
   
   if defined(Service['httpd']) {
     Oxid::Update[$name] ~> Service['httpd']
