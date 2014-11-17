@@ -116,10 +116,16 @@ define oxid::update (
   $updateViews      = true,
   $timeout          = 900) {
   include 'stdlib'
-  include ::oxid::apache::params
+  
 
-  Oxid::Apache::Params <| |> -> Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |>
+  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |>
 
+  if defined(!Class[apache::params]) {
+    class{apache::params:}
+  }
+  
+  class { ::oxid::apache::params: require => apache::params}
+  
   if defined(Service['httpd']) {
     Oxid::Update[$name] ~> Service['httpd']
   }
