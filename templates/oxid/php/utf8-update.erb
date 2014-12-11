@@ -1,0 +1,211 @@
+<?php
+
+ini_set('session.name', 'sid' );
+ini_set('session.use_cookies', 0 );
+ini_set('session.use_trans_sid', 0);
+ini_set('url_rewriter.tags', '');
+ini_set('magic_quotes_runtime', 0);
+
+include_once 'bootstrap.php';
+
+class cli_update_utf8 extends oxSuperCfg  {
+    
+    public function doUpdate() {
+        $this->backupConfigData();
+        $this->convertConfigData();
+        $this->cleanUp();
+    } 
+    /**
+     * Config data is very important, so we can only work with backuped
+     * data. Returns name of next function to execute
+     *
+     * @return string
+     */
+    public function backupConfigData()
+    {
+        $sQ = "INSERT INTO oxconfig ( oxid, oxshopid, oxvarname, oxvartype, oxvarvalue )
+               SELECT CONCAT( '@#', SUBSTRING( MD5( CONCAT( oxid, oxvarname ) ), 2 ) ), oxshopid, oxvarname, oxvartype, oxvarvalue FROM oxconfig WHERE oxid NOT LIKE '@%'";
+    
+        oxDb::getDb()->execute( $sQ );
+    }
+    
+    /**
+     * Converts config data. Returns name of next function to execute
+     *
+     * @return string
+     */
+    public function convertConfigData()
+    {
+        $oDb = oxDb::getDb( true );
+    
+        // continuing update ..
+        $sQ  = "SELECT oxid, oxvartype, HEX(DECODE( oxvarvalue, '".$this->getConfig()->getConfigParam( 'sConfigKey' )."')) AS oxvarvalue FROM oxconfig
+                WHERE oxid LIKE '@#%'";
+
+        $oRs = oxDb::getDb(true)->Execute( $sQ );
+        if ( $oRs != false && $oRs->recordCount() > 0) {
+            while ( !$oRs->EOF ) {
+    
+                $sVarId   = $oRs->fields['oxid'];
+                $sVarType = $oRs->fields['oxvartype'];
+                $sVarVal  = pack( "H*", $oRs->fields['oxvarvalue'] );
+    
+                switch ( $sVarType ) {
+                    case 'arr':
+                    case 'aarr':
+                        $this->_encodeConfigArray( $sVarId, $sVarType, $sVarVal );
+                        break;
+                    case 'str':
+                        $this->_encodeConfigString( $sVarId, $sVarType, $sVarVal );
+                        break;
+                    default:
+                        $this->_markAsUpdated( $sVarId, $sVarType );
+                }
+    
+                $oRs->moveNext();
+            }
+        }
+    }
+    
+    /**
+     * Return config instance
+     *
+     * @return oxconfig
+     */
+    public function getConfig()
+    {
+        return oxConfig::getInstance();
+    }
+    
+    /**
+     * Returns user chosen charset
+     *
+     * @return string
+     */
+    protected function _getInCharset()
+    {
+        return "ISO-8859-1";
+    }
+    
+    /**
+     * Returns charset used to encode config data
+     *
+     * @return string
+     */
+    protected function _getOutCharset()
+    {
+        return "UTF-8";
+    }
+    
+    /**
+     * Updates config value
+     *
+     * @param string $sVarId   variable id
+     * @param string $sVarType variable type
+     * @param string $sVarVal  variable value
+     *
+     * @return null
+     */
+    protected function _updateConfigValue( $sVarId, $sVarType, $sVarVal )
+    {
+        // updating and marking as updated
+        $sQ = "UPDATE oxconfig SET oxvarvalue = ENCODE( '$sVarVal', '".$this->getConfig()->getConfigParam('sConfigKey')."'), oxid = CONCAT( '@', SUBSTRING( oxid, 3 ) ) WHERE oxid = '$sVarId' AND oxvartype = '$sVarType'";
+        oxDb::getDb()->execute( $sQ );
+    }
+    
+    /**
+     * Marks config field as updated
+     *
+     * @return null
+     */
+    protected function _markAsUpdated( $sVarId, $sVarType )
+    {
+        // updating and marking as updated
+        $sQ = "UPDATE oxconfig SET oxid = CONCAT( '@', SUBSTRING( oxid, 3 ) ) WHERE oxid = '$sVarId' AND oxvartype = '$sVarType'";
+        oxDb::getDb()->execute( $sQ );
+    }
+    
+    /**
+     * Returns encoded value
+     *
+     * @param string $sVal value to encode
+     *
+     * @return string
+     */
+    protected function _getEncodedVal( $sVal )
+    {
+        return iconv( $this->_getInCharset(), $this->_getOutCharset(), $sVal );
+    }
+    
+    /**
+     * Recursivelly encodes config array and returns it
+     *
+     * @param array $aVarVal config array
+     *
+     * @return array
+     */
+    protected function _encodeArray( $aVarVal )
+    {
+        $aNewVal = array();
+        foreach ( $aVarVal as $sArrKey => $sArrValue ) {
+            if ( is_array( $sArrValue ) ) {
+                $sArrValue = $this->_encodeArray( $sArrValue );
+            } else {
+                $sArrValue = $this->_getEncodedVal( $sArrValue );
+            }
+            $aNewVal[ $this->_getEncodedVal( $sArrKey ) ] = $sArrValue;
+        }
+    
+        return $aNewVal;
+    }
+    
+    /**
+     * ReEncodes array
+     *
+     * @param string $sVarId   variable id
+     * @param string $sVarType variable type
+     * @param string $sVarVal  variable value
+     *
+     * @return null
+     */
+    protected function _encodeConfigArray( $sVarId, $sVarType, $sVarVal )
+    {
+        if ( ( $aVarVal = unserialize( $sVarVal ) ) !== false && is_array( $aVarVal ) ) {
+            $this->_updateConfigValue( $sVarId, $sVarType, serialize( $this->_encodeArray( $aVarVal ) ) );
+        } else {
+            $this->_markAsUpdated( $sVarId, $sVarType );
+        }
+    
+        return $aNewVal;
+    }
+    
+    /**
+     * ReEncodes string value
+     *
+     * @param string $sVarId   variable id
+     * @param string $sVarType variable type
+     * @param string $sVarVal  variable value
+     *
+     * @return null
+     */
+    protected function _encodeConfigString( $sVarId, $sVarType, $sVarVal )
+    {
+        $sVarVal = $this->_getEncodedVal( $sVarVal );
+        $this->_updateConfigValue( $sVarId, $sVarType, $sVarVal );
+    }
+    
+    /**
+     * Deleting old config data
+     *
+     * @return null
+     */
+    public function cleanUp()
+    {   
+            // cleaning up
+            $sQ = "DELETE FROM oxconfig WHERE oxid NOT LIKE '@%'";
+            oxDb::getDb()->execute( $sQ );
+        }
+}
+
+$update = new cli_update_utf8();
+$update->doUpdate();
