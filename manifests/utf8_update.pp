@@ -15,7 +15,7 @@ class oxid::utf8_update (
   $source_password = undef,
   $owner               = $apache::params::user,
   $group               = $apache::params::group,
-  $sql_file => "utf8_EE.sql") {
+  $sql_file = "utf8_EE.sql") {
   include ::mysql::client
 
   $mysource = $source ? {
