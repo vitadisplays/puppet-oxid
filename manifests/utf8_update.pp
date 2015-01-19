@@ -1,5 +1,7 @@
  include 'stdlib'
  include ::oxid::params
+ include ::oxid::php::params
+ include ::oxid::apache::params
 
 class oxid::utf8_update (
   $shop_dir        = $oxid::params::shop_dir,
@@ -19,19 +21,7 @@ class oxid::utf8_update (
 
   if !defined(Class[::mysql::client]) {
     class{::mysql::client:}
-  }
-  
-  if !defined(Class[::apache::params]) {
-    class{::apache::params:}
-  }
-  
-  if !defined(Class[::oxid::apache::params]) {
-    class { ::oxid::apache::params: require => Class[::apache::params]}
-  }
-  
-  if !defined(Class[::oxid::php::params]) {
-    class { ::oxid::php::params: }
-  }
+  }  
   
   $mysource = $source ? {
     undef   => $name,
@@ -84,7 +74,7 @@ class oxid::utf8_update (
 
   oxid::php::runner { $php_file: source => $php_file, require =>  File[$php_file] }
 
-  exec { "rm -f '${php_file}' '${sql_file}'": path => $oxid::params::path, require => [Oxid::Php::Runner[$php_file], Mysql_import["${sql_file}"]] }
+  exec { "rm -f '${php_file}' '${sql_file}'": path => $oxid::params::path, require => [Oxid::Php::Runner[$php_file], Mysql_import["${shop_dir}/${sql_file}"]] }
 
   replace_all { "${name}: configure ${shop_dir}/config.inc.php":
     file         => "${shop_dir}/config.inc.php",
