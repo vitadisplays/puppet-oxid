@@ -16,8 +16,23 @@ class oxid::utf8_update (
   $owner               = $apache::params::user,
   $group               = $apache::params::group,
   $sql_file = "utf8_EE.sql") {
-  include ::mysql::client
 
+  if !defined(Class[::mysql::client]) {
+    class{::mysql::client:}
+  }
+  
+  if !defined(Class[::apache::params]) {
+    class{::apache::params:}
+  }
+  
+  if !defined(Class[::oxid::apache::params]) {
+    class { ::oxid::apache::params: require => Class[::apache::params]}
+  }
+  
+  if !defined(Class[::oxid::php::params]) {
+    class { ::oxid::php::params: 
+  }
+  
   $mysource = $source ? {
     undef   => $name,
     default => $source
@@ -50,7 +65,7 @@ class oxid::utf8_update (
     require => Exec["cp -f ${archive_dir}/$sql_file ${shop_dir}/"] 
   }
 
-  mysql_import { "${sql_file}":
+  mysql_import { ["${shop_dir}/${sql_file}"]:
     db_host     => $db_host,
     db_port     => $db_port,
     db_user     => $db_user,
