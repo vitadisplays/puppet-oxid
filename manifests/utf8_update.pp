@@ -30,7 +30,7 @@ class oxid::utf8_update (
   }
   
   if !defined(Class[::oxid::php::params]) {
-    class { ::oxid::php::params: 
+    class { ::oxid::php::params: }
   }
   
   $mysource = $source ? {
