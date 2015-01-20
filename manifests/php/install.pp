@@ -1,3 +1,5 @@
+require oxid::php::params
+
 # Class: oxid::php::install
 #
 # This class installs PHP.
@@ -20,7 +22,7 @@ class oxid::php::install (
   $provider = $oxid::php::params::provider,
   $inifile  = $oxid::php::params::inifile,
   $settings = $oxid::php::params::settings,
-  $dotdeb   = false) inherits oxid::php::params {
+  $dotdeb   = false) {
   if !defined(Class[php::apt]) {
     if $dotdeb == true {
       include php::apt

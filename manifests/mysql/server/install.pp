@@ -1,3 +1,5 @@
+require oxid::mysql::server::params
+
 # Class: oxid::mysql::server::install
 #
 # This class installs MySQL Server.
@@ -23,7 +25,7 @@ class oxid::mysql::server::install (
   $override_options = undef,
   $users            = undef,
   $grants           = undef,
-  $databases        = undef) inherits oxid::mysql::server::params {
+  $databases        = undef) {
   include oxid::params
 
   $default_override_options = $oxid::mysql::server::params::override_options

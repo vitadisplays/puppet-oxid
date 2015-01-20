@@ -1,3 +1,5 @@
+require ::oxid::params
+
 # Class: oxid::php::zendguardloader 
 #
 # This class installs Zend Guard.
@@ -35,8 +37,7 @@ class oxid::php::zendguardloader (
   $zend_optimizer_optimization_level = 15,
   $zend_loader_license_path          = "",
   $zend_loader_disable_licensing     = 0,
-  $ini_source    = undef) inherits oxid::apache::params {
-  include ::oxid::params
+  $ini_source    = undef) {  
     
   if defined(Class['apache::mod::php']) {
     Class['apache::mod::php'] -> Oxid::Php::Zendguardloader <| |>
