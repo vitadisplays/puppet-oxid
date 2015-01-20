@@ -1,5 +1,6 @@
 require php::params
 require apache::params
+require mysql::server::params
 
 class oxid::params {
   $shop_dir = "/srv/www/oxid"
