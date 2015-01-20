@@ -1,6 +1,5 @@
-include ::apache::params
-include ::oxid::php::params
-include ::oxid::apache::params
+require php::params
+require apache::params
 
 class oxid::params {
   $shop_dir = "/srv/www/oxid"

@@ -1,5 +1,5 @@
 include 'stdlib'
-include ::oxid::params
+require oxid::params
 
 class oxid::utf8_update (
   $shop_dir        = $oxid::params::shop_dir,

@@ -1,5 +1,5 @@
 include 'stdlib'
-include ::oxid::params
+require oxid::params
 
 import "conf.pp"
 import "utils.pp"
