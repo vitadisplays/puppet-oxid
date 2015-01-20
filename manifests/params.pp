@@ -1,8 +1,8 @@
-require php::params
-require apache::params
-require mysql::server::params
-
 class oxid::params {
+  require php::params
+  require apache::params
+  require mysql::server::params
+
   $shop_dir = "/srv/www/oxid"
   $compile_dir = "${shop_dir}/tmp"
 

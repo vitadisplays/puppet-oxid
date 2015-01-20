@@ -1,6 +1,3 @@
-include 'stdlib'
-require oxid::params
-
 import "conf.pp"
 import "utils.pp"
 import "updateViews.pp"
@@ -110,8 +107,8 @@ class oxid (
   $extra_db_setup_sqls = undef,
   $owner               = $apache::params::user,
   $group               = $apache::params::group,
-  $purge               = true) {
-
+  $purge               = true) inherits oxid::params {
+  include 'stdlib'
   validate_array($db_setup_sqls)
 
   Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[oxid]

@@ -1,6 +1,3 @@
-include 'stdlib'
-require oxid::params
-
 class oxid::utf8_update (
   $shop_dir        = $oxid::params::shop_dir,
   $compile_dir     = $oxid::params::compile_dir,
@@ -15,8 +12,9 @@ class oxid::utf8_update (
   $source_password = undef,
   $owner               = $apache::params::user,
   $group               = $apache::params::group,
-  $sql_file = "utf8_EE.sql") {
-
+  $sql_file = "utf8_EE.sql") inherits oxid::params {
+  include 'stdlib'
+  
   if !defined(Class[::mysql::client]) {
     class{::mysql::client:}
   }  

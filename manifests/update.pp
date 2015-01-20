@@ -1,5 +1,3 @@
-require oxid::params
-
 import "conf.pp"
 import "utils.pp"
 import "updateViews.pp"
@@ -81,7 +79,7 @@ import "updateViews.pp"
 #     answers => ["2", "1", "1"],
 #     fail_on_error => true
 #  }
-define oxid::update (
+class oxid::update (
   $shop_dir         = $oxid::params::shop_dir,
   $compile_dir      = $oxid::params::compile_dir,
   $db_type          = $oxid::params::db_type,
@@ -116,7 +114,7 @@ define oxid::update (
   $answers          = [],
   $fail_on_error    = true,
   $updateViews      = true,
-  $timeout          = 900) {
+  $timeout          = 900) inherits oxid::params {
   include 'stdlib'  
 
   Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |>

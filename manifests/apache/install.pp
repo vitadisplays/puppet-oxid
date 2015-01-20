@@ -27,8 +27,7 @@ class oxid::apache::install (
   $default_ssl_vhost = false,  
   $ssl               = true,
   $ssl_cert          = undef,
-  $ssl_key           = undef) {
-  include apache::params
+  $ssl_key           = undef) inherits oxid::params {
 
   if !defined(Class[oxid::apt]) {
     include oxid::apt
