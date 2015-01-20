@@ -1,3 +1,6 @@
+include 'stdlib'
+include ::oxid::params
+
 import "conf.pp"
 import "utils.pp"
 import "updateViews.pp"
@@ -107,9 +110,7 @@ class oxid (
   $extra_db_setup_sqls = undef,
   $owner               = $apache::params::user,
   $group               = $apache::params::group,
-  $purge               = true) inherits ::oxid::params {
-  include 'stdlib'
-  include ::oxid::apache::params
+  $purge               = true) {
 
   validate_array($db_setup_sqls)
 

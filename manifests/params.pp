@@ -1,3 +1,7 @@
+include ::apache::params
+include ::oxid::php::params
+include ::oxid::apache::params
+
 class oxid::params {
   $shop_dir = "/srv/www/oxid"
   $compile_dir = "${shop_dir}/tmp"

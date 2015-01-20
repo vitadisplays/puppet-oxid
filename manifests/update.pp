@@ -1,3 +1,5 @@
+include ::oxid::params
+
 import "conf.pp"
 import "utils.pp"
 import "updateViews.pp"
@@ -118,14 +120,6 @@ define oxid::update (
   include 'stdlib'  
 
   Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Oxid::Update <| |>
-
-  if !defined(Class[::apache::params]) {
-    class{::apache::params:}
-  }
-  
-  if !defined(Class[::oxid::apache::params]) {
-    class { ::oxid::apache::params: require => Class[::apache::params]}
-  }
   
   if defined(Service['httpd']) {
     Oxid::Update[$name] ~> Service['httpd']
