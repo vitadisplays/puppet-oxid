@@ -117,7 +117,7 @@ class oxid::update (
   $timeout          = 900) inherits oxid::params {
   include 'stdlib'  
 
-  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[Oxid::Update] <| |>
+  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[oxid::update] <| |>
   
   if defined(Service['httpd']) {
     Oxid::Update[$name] ~> Service['httpd']
