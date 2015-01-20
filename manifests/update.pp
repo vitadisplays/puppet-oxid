@@ -117,7 +117,7 @@ class oxid::update (
   $timeout          = 900) inherits oxid::params {
   include 'stdlib'  
 
-  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[oxid::update] <| |>
+  Oxid::Repository::Config::File <| |> -> Oxid::Repository::Config::Wget <| |> -> Class[oxid::update]
   
   if defined(Service['httpd']) {
     Oxid::Update[$name] ~> Service['httpd']
@@ -276,16 +276,6 @@ class oxid::update (
         require     => [Class[::mysql::client], Oxid::Repository::Unpack["${name}: ${mysource}"]]
       }
 
-      /* oxid::mysql::execDirectory { "${name}: update database from ${sql_dir}":
-       * directory => $sql_dir,
-       * pattern   => "*.sql",
-       * host      => $db_host,
-       * db        => $db_name,
-       * user      => $db_user,
-       * password  => $db_password
-       *}
-       */
-
       case $copy_this {
         'before' : {
           Exec[$cmds[1]] -> Mysql_import ["${sql_dir}/*.sql"]
@@ -321,99 +311,4 @@ class oxid::update (
       }
     }
   }
-
-  /* if $run_cli {
-   * $run_cli_filename = inline_template("<%= File.basename(@filename, '.*') %>")
-   * $php_file = "${shop_dir}/updateApp/${run_cli_filename}.php"
-   *
-   * file { $php_file:
-   * content => template("oxid/oxid/updateApp/run_unattended_cli.php.erb"),
-   * require => Exec[$cmds[0]]
-   * } ->
-   * exec { "${name}: run cli ${php_file}":
-   * command => "php -f ${php_file} > ${shop_dir}/log/${run_cli_filename}.log",
-   * path    => $oxid::params::path,
-   * timeout => $timeout,
-   * notify  => Oxid::FileCheck[$name]
-   *}
-   *
-   * if $updateViews {
-   * oxid::updateViews { $name:
-   *   shop_dir    => $shop_dir,
-   *   refreshonly => false,
-   *   notify      => Oxid::FileCheck[$name],
-   *   require     => Exec["${name}: run cli ${php_file}"]
-   *}
-   *}
-   *}
-   */
-
-  /* $configs_req = unique([
-   * Exec[$cmds[0]],
-   * $run_cli ? {
-   * true    => Exec["${name}: run cli ${php_file}"],
-   * default => Exec[$cmds[0]]
-   * },
-   * $copy_this ? {
-   * 'before' => Exec[$cmds[1]],
-   * 'after'  => Exec[$cmds[1]],
-   * default  => Exec[$cmds[0]]
-   * },
-   * $changed_full ? {
-   * 'before' => Exec[$cmds[2]],
-   * 'after'  => Exec[$cmds[2]],
-   * default  => Exec[$cmds[0]]
-   * } ])
-   */
-
-
-  /* if $config_content != undef or $config_source != undef {
-   * file { "${shop_dir}/config.inc.php":
-   * ensure  => 'present',
-   * mode    => "0400",
-   * owner   => $owner,
-   * group   => $group,
-   * content => $config_content,
-   * source  => $config_source,
-   * require => $configs_req,
-   * notify  => Oxid::FileCheck[$name]
-   *}
-   * } else {
-   * oxid::configureConfig { $name:
-   * dbType       => $db_type,
-   * dbHost       => $db_host,
-   * dbName       => $db_name,
-   * dbUser       => $db_user,
-   * dbPwd        => $db_password,
-   * sShopURL     => $shop_url,
-   * sSSLShopURL  => $shop_sslUrl,
-   * sAdminSSLURL => $shop_adminSslUrl,
-   * sShopDir     => $shop_dir,
-   * sCompileDir  => $compile_dir,
-   * iUtfMode     => $utf8Mode,
-   * require      => $configs_req,
-   * notify       => Oxid::FileCheck[$name]
-   *}
-   *}
-   *
-   * if $htaccess_content != undef or $htaccess_source != undef {
-   * file { "${shop_dir}/.htaccess":
-   * ensure  => 'present',
-   * mode    => "0400",
-   * owner   => $owner,
-   * group   => $group,
-   * content => $htaccess_content,
-   * source  => $htaccess_source,
-   * require => $configs_req,
-   * notify  => Oxid::FileCheck[$name]
-   *}
-   * } else {
-   * oxid::configureHtaccess { $name:
-   * sShopDir    => $shop_dir,
-   * rewriteBase => $rewrite_path,
-   * require     => $configs_req,
-   * notify      => Oxid::FileCheck[$name]
-   *}
-   *}
-   */
 }
