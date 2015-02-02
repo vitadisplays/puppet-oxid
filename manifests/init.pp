@@ -105,8 +105,8 @@ class oxid (
   ,
   $db_setup_sqls       = ["setup/sql/database.sql"],
   $extra_db_setup_sqls = undef,
-  $owner               = $apache::params::user,
-  $group               = $apache::params::group,
+  $user             = $oxid::apache::params::user,
+  $group            = $oxid::apache::params::group,
   $purge               = true) inherits oxid::params {
   include 'stdlib'
   validate_array($db_setup_sqls)

@@ -32,8 +32,8 @@ define replace ($file, $pattern, $replacement) {
 define oxid::fileCheck (
   $shop_dir    = $oxid::params::shop_dir,
   $compile_dir = $oxid::params::compile_dir,
-  $owner       = $apache::params::user,
-  $group       = $apache::params::group,
+  $owner       = $oxid::apache::params::user,
+  $group       = $oxid::apache::params::group,
   $refreshonly = false) {
   validate_absolute_path($shop_dir)
   validate_absolute_path($compile_dir)

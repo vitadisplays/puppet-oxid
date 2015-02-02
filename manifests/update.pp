@@ -103,8 +103,8 @@ class oxid::update (
   $htaccess_extra_replacements = {
   }
   ,
-  $user             = $apache::params::user,
-  $group            = $apache::params::group,
+  $user             = $oxid::apache::params::user,
+  $group            = $oxid::apache::params::group,
   $source           = undef,
   $repository       = $oxid::params::default_repository,
   $source_password  = undef,
