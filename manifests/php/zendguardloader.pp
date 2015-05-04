@@ -47,6 +47,17 @@ class oxid::php::zendguardloader (
     Class[oxid::php::zendguardloader] ~> Service['httpd']
   }
 
+  $inifile  = '/etc/php5/conf.d/20-zendguard.ini'
+  $settings = {
+    set => {
+	      '.anon/zend_extension'          				=> $zend_loader_extension_file,
+	      '.anon/zend_loader.enable'  					=> 1,
+	      '.anon/zend_loader.disable_licensing'         => $zend_loader_disable_licensing,
+	      '.anon/zend_optimizer.optimization_level'     => $zend_optimizer_optimization_level,
+	      '.anon/zend_loader.license_path'   			=> $zend_loader_license_path
+    }
+  }
+  
   $downloads = {
     "5.2-i386"   => "optimizer/3.3.9/ZendOptimizer-3.3.9-linux-glibc23-i386.tar.gz",
     "5.2-x86_64" => "optimizer/3.3.9/ZendOptimizer-3.3.9-linux-glibc23-x86_64.tar.gz",
@@ -90,16 +101,8 @@ class oxid::php::zendguardloader (
     require => Class[oxid::package::packer]
   } ->
     
-  php::config { 'php-extension-zend-guard':
-    inifile  => '/etc/php5/conf.d/20-zend-guard.ini',
-    settings => {
-	    set => {
-	      '.anon/zend_extension'          				=> $zend_loader_extension_file,
-	      '.anon/zend_loader.enable'  					=> 1,
-	      '.anon/zend_loader.disable_licensing'         => $zend_loader_disable_licensing,
-	      '.anon/zend_optimizer.optimization_level'     => $zend_optimizer_optimization_level,
-	      '.anon/zend_loader.license_path'   			=> $zend_loader_license_path
-	    }
-    }
+  php::config { 'php-extension-zendguard':
+    inifile  => $inifile,
+    settings => $settings
   }
 }
