@@ -94,11 +94,11 @@ class oxid::php::zendguardloader (
     inifile  => '/etc/php5/conf.d/20-zend-guard.ini',
     settings => {
 	    set => {
-	      '.anon/zend_extension'          				=> "'${zend_loader_extension_file}'",
+	      '.anon/zend_extension'          				=> $zend_loader_extension_file,
 	      '.anon/zend_loader.enable'  					=> 1,
 	      '.anon/zend_loader.disable_licensing'         => $zend_loader_disable_licensing,
 	      '.anon/zend_optimizer.optimization_level'     => $zend_optimizer_optimization_level,
-	      '.anon/zend_loader.license_path'   			=> "'${zend_loader_license_path}'"
+	      '.anon/zend_loader.license_path'   			=> $zend_loader_license_path
 	    }
     }
   }
