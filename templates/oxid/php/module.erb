@@ -34,8 +34,8 @@ if (file_exists(getShopBasePath().'bootstrap.php')) {
 			$oCache->reset();
 		}
 	} catch (Exception $oEx) {
-		echo $oEx->message;
-		exit($oEx->message);
+		echo $oEx->getMessage();
+		exit($oEx->getMessage());
 	} 
 } else if('<%= @json_class_mapping %>' != '') {	
 	try {
@@ -105,8 +105,8 @@ if (file_exists(getShopBasePath().'bootstrap.php')) {
 			$myConfig->saveShopConfVar('aarr', 'aModules', $aModules, $sShopId);
 		}
 	} catch (Exception $oEx) {
-		echo $oEx->message;
-		exit($oEx->message);
+		echo $oEx->getMessage();
+		exit($oEx->getMessage());
 	}
 }
 

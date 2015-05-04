@@ -29,8 +29,8 @@ if (file_exists(getShopBasePath().'bootstrap.php')) {
 		$oCache = oxNew( 'oxcache' );
 		$oCache->reset();
 	} catch (Exception $oEx) {
-		echo $oEx->message;
-		exit($oEx->message);
+		echo $oEx->getMessage();
+		exit($oEx->getMessage());
 	}    
 }
 

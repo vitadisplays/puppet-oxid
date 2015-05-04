@@ -45,8 +45,8 @@ try {
 		oxDb::getInstance()->updateViews();
 	}
 } catch (Exception $oEx) {
-	echo $oEx->message;
-	exit($oEx->message);
+	echo $oEx->getMessage();
+	exit($oEx->getMessage());
 }
 
 exit(0);
