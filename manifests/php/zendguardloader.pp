@@ -31,7 +31,7 @@ require ::oxid::params
 #
 class oxid::php::zendguardloader (
   $extension_dir = "/usr/local/zend/lib/php/extensions",
-  inifile = '/etc/php5/conf.d/20-zendguard.ini',
+  $inifile = '/etc/php5/conf.d/20-zendguard.ini',
   $version       = "5.3",
   $repository    = 'zend',
   $zend_optimizer_optimization_level = 15,
