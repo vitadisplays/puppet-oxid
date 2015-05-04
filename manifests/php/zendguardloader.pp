@@ -89,16 +89,17 @@ class oxid::php::zendguardloader (
     unless  => "test -f '${zend_loader_extension_file}'",
     require => Class[oxid::package::packer]
   } ->
-  file { "${oxid::php::params::confdir}/zend_guard.ini":
-    owner   => "root",
-    group   => "root",
-    content => $ini_source ? {
-      undef   => template("oxid/php/zend-guard-loader.erb"),
-      default => undef
-    },
-    source  => $ini_source ? {
-      undef   => undef,
-      default => $ini_source
+    
+  php::config { 'php-extension-zend-guard':
+    inifile  => '/etc/php5/conf.d/20-zend-guard.ini',
+    settings => {
+	    set => {
+	      '.anon/zend_extension'          				=> "'${zend_loader_extension_file}'",
+	      '.anon/zend_loader.enable'  					=> 1,
+	      '.anon/zend_loader.disable_licensing'         => $zend_loader_disable_licensing,
+	      '.anon/zend_optimizer.optimization_level'     => $zend_optimizer_optimization_level,
+	      '.anon/zend_loader.license_path'   			=> "'${zend_loader_license_path}'"
+	    }
     }
   }
 }
