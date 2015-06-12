@@ -28,7 +28,7 @@ define oxid::rsyncGet ($source, $shop_dir, $keyfile = "~/.ssh/id_rsa", $timeout)
     include oxid::package::utils
   }
 
-  exec { "rsync -raz -e \"ssh -C -i ${keyfile} -o StrictHostKeyChecking=no\" ${source}/${name}/ ${shop_dir}/${name}":
+  exec { "rsync -raz -e \"ssh -C -i ${keyfile} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" ${source}/${name}/ ${shop_dir}/${name}":
     path    => $oxid::params::path,
     timeout => $timeout,
     require => Class[oxid::package::utils]
@@ -91,17 +91,17 @@ define oxid::sshFetchRemoteData (
     case $compression {
       'bzip2' : {
         $archive = "${backup_dir}/data.tar.bz2"
-        $create_prg = "ssh -i '${keyfile}' -o StrictHostKeyChecking=no ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cj -T - --null' > '${$archive}'"
+        $create_prg = "ssh -i '${keyfile}' -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cj -T - --null' > '${$archive}'"
         $extract_prg = "tar -xjf '${$archive}' --directory '${shop_dir}'"
       }
       'gzip'  : {
         $archive = "${backup_dir}/data.tar.gz"
-        $create_prg = "ssh -i '${keyfile}' -o StrictHostKeyChecking=no ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cz -T - --null' > '${$archive}'"
+        $create_prg = "ssh -i '${keyfile}' -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -cz -T - --null' > '${$archive}'"
         $extract_prg = "tar -xzf '${$archive}' --directory '${shop_dir}'"
       }
       'none'  : {
         $archive = "${backup_dir}/data.tar"
-        $create_prg = "ssh -i '${keyfile}' -o StrictHostKeyChecking=no ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -c -T - --null' > '${$archive}'"
+        $create_prg = "ssh -i '${keyfile}' -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${name} 'cd \"${remote_dir}\" ; find ${includes_str} -type f -print0 | tar -c -T - --null' > '${$archive}'"
         $extract_prg = "tar -xf '${$archive}' --directory '${shop_dir}'"
       }
 
@@ -295,7 +295,7 @@ define oxid::sshFetchRemoteSQL (
       path    => $oxid::params::path,
       unless  => "test -d '${backup_dir}'"
     } ->
-    exec { "ssh -C -i '${keyfile}' -o StrictHostKeyChecking=no ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}"
+    exec { "ssh -C -i '${keyfile}' -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' > ${archive}"
     :
       path    => $oxid::params::path,
       unless  => "test -f '${archive}'",
@@ -342,7 +342,7 @@ define oxid::sshFetchRemoteSQL (
       }
     }
   } else {
-    exec { "ssh -C -i '${keyfile}' -o StrictHostKeyChecking=no ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' | mysql --host=\"${db_host}\" --port=${db_port} --user=\"${db_user}\" --password=\"${db_password}\" \"${db_name}\""
+    exec { "ssh -C -i '${keyfile}' -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${name} 'mysqldump --host=\"${remote_db_host}\" --port=${remote_db_port} --user=\"${remote_db_user}\" --password=\"${remote_db_password}\" ${dump_options_str} \"${remote_db_name}\" ${dump_tables_str} ${create_prg}' | mysql --host=\"${db_host}\" --port=${db_port} --user=\"${db_user}\" --password=\"${db_password}\" \"${db_name}\""
     :
       path    => $oxid::params::path,
       timeout => $timeout
