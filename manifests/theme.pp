@@ -114,24 +114,21 @@ define oxid::theme (
 
   if $ensure == 'activated' {
     $theme = $name
-  } else {
-    $theme = $default_theme
-  }
-
-  file { $php_file:
-    ensure  => 'present',
-    content => template("oxid/oxid/php/theme.erb"),
-    mode    => "0755",
-    owner   => $user,
-    group   => $group
-  } ->
-  oxid::php::runner { $php_file: source => $php_file } ->
-  exec { "rm -f '${php_file}'": path => $oxid::params::path } ->
-  # ## For pre oxid 4.5.x
-  replace { "${name}: configure ${shop_dir}/config.inc.php":
-    file        => "${shop_dir}/config.inc.php",
-    pattern     => "\$this->sTheme[ ]*=[ ]*.*;",
-    replacement => "\$this->sTheme = '${theme}';"
+	  file { $php_file:
+		ensure  => 'present',
+		content => template("oxid/oxid/php/theme.erb"),
+		mode    => "0755",
+		owner   => $user,
+		group   => $group
+	  } ->
+	  oxid::php::runner { $php_file: source => $php_file } ->
+	  exec { "rm -f '${php_file}'": path => $oxid::params::path } ->
+	  # ## For pre oxid 4.5.x
+	  replace { "${name}: configure ${shop_dir}/config.inc.php":
+		file        => "${shop_dir}/config.inc.php",
+		pattern     => "\$this->sTheme[ ]*=[ ]*.*;",
+		replacement => "\$this->sTheme = '${theme}';"
+	  }	
   }
 
   if $configurations != undef {
