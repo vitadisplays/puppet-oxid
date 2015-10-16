@@ -105,9 +105,7 @@ define oxid::theme (
           compile_dir => $compile_dir,
           owner       => $user,
           group       => $group
-        }
-
-        Oxid::Unpack_theme[$name] -> Oxid::FileCheck[$name] -> File[$php_file]
+        }       
       }
     }
   }
@@ -128,7 +126,11 @@ define oxid::theme (
 		file        => "${shop_dir}/config.inc.php",
 		pattern     => "\$this->sTheme[ ]*=[ ]*.*;",
 		replacement => "\$this->sTheme = '${theme}';"
-	  }	
+	  }
+	  
+	  Oxid::Unpack_theme[$name] -> Oxid::FileCheck[$name] -> File[$php_file]
+  } else {
+	  Oxid::Unpack_theme[$name] -> Oxid::FileCheck[$name]
   }
 
   if $configurations != undef {
